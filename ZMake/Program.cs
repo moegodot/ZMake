@@ -1,5 +1,9 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
+using Microsoft.Extensions.Logging;
+using Pillar.Demystifier;
 using Semver;
+using StrongInject;
 
 namespace ZMake;
 
@@ -11,8 +15,21 @@ public class Program
 
     public static readonly SemVersion SemVersion = SemVersion.FromVersion(Version);
 
-    static void Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
-        Console.WriteLine("Hello, World!");
+        try
+        {
+            var factory = LoggerFactory.Create((builder) => { });
+            var container = new Container(factory);
+            using var context = container.Resolve();
+
+        }
+        catch (Exception exception)
+        {
+            exception.PrintColoredStringDemystified(StyledBuilderOption.GlobalOption, Console.Error);
+            return 1;
+        }
+
+        return 0;
     }
 }

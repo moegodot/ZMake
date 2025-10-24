@@ -10,11 +10,14 @@ public sealed class Name : IEquatable<Name>
 
     public IReadOnlyList<string> Names { get; init; }
 
-    public static readonly Name ZMake = new(ArtifactName.ZMake, ["root"]);
-
     internal static Name MakeInternalName(params string[] names)
     {
-        return new Name(ArtifactName.ZMake, ["internal" , ..names]);
+        return Create(ArtifactName.ZMake, ["internal" , ..names]);
+    }
+
+    internal static Name MakePublicName(params string[] names)
+    {
+        return Create(ArtifactName.ZMake, [..names]);
     }
 
     public static readonly Regex NameRegex = new("^[a-zA-Z_]+[a-zA-Z0-9_]*$");

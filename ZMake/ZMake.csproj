@@ -15,5 +15,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.10" />
         <PackageReference Include="Semver" Version="3.0.0" />
         <PackageReference Include="StrongInject" Version="1.*.*" />
+        <PackageReference Include="MoeDotKawayi.Pillar.Demystifier" Version="0.4.1" />
     </ItemGroup>
 </Project>

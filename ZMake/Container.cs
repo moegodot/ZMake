@@ -9,8 +9,10 @@ namespace ZMake;
 [Register(typeof(Program))]
 [Register(typeof(BuildContext))]
 [Register(typeof(TaskEngine))]
-
-[RegisterModule(typeof(LoggingModule))]
 public partial class Container : IContainer<BuildContext>
 {
+    [Instance]
+    protected ILoggerFactory Factory { get; }
+
+    public Container(ILoggerFactory factory) => Factory = factory;
 }
