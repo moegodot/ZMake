@@ -1,11 +1,7 @@
-namespace ZMake;
+namespace ZMake.Api;
 
 public sealed class Target : ITarget
 {
-    public Name Name { get; init; }
-    public IEnumerable<Name> Requirements { get; init; }
-    public IEnumerable<Task> Tasks { get; init; }
-
     public Target(Name name,
         IEnumerable<Name> requirements,
         IEnumerable<Task> tasks)
@@ -14,6 +10,10 @@ public sealed class Target : ITarget
         Requirements = requirements.ToArray();
         Tasks = tasks.ToArray();
     }
+
+    public Name Name { get; init; }
+    public IEnumerable<Name> Requirements { get; init; }
+    public IEnumerable<Task> Tasks { get; init; }
 
     public override string ToString()
     {

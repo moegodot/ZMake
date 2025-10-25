@@ -1,18 +1,19 @@
 using Microsoft.Extensions.Logging;
 using StrongInject;
+using ZMake.Api;
 
 namespace ZMake;
 
 // for user to use
-[RegisterModule(typeof(ZMake.Module))]
-
-[Register(typeof(Program))]
+[RegisterModule(typeof(ZMake.Api.Module))]
 [Register(typeof(BuildContext))]
 [Register(typeof(TaskEngine))]
-public partial class Container : IContainer<BuildContext>
+internal partial class Container : IContainer<BuildContext>
 {
-    [Instance]
-    protected ILoggerFactory Factory { get; }
+    public Container(ILoggerFactory loggerFactory)
+    {
+        Factory = loggerFactory;
+    }
 
-    public Container(ILoggerFactory factory) => Factory = factory;
+    [Instance] protected ILoggerFactory Factory { get; }
 }

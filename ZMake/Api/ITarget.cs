@@ -1,4 +1,4 @@
-namespace ZMake;
+namespace ZMake.Api;
 
 public interface ITarget
 {

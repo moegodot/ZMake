@@ -1,6 +1,4 @@
-using System.Diagnostics;
-
-namespace ZMake;
+namespace ZMake.Api;
 
 #if ZMAKE_NO_EXTERNAL_MODULE
 public class Module

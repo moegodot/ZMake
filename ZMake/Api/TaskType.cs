@@ -1,7 +1,7 @@
-﻿namespace ZMake;
+﻿namespace ZMake.Api;
 
 public enum TaskType
 {
     IoBound,
-    CpuBound,
+    CpuBound
 }

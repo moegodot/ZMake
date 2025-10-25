@@ -1,39 +1,42 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 
-namespace ZMake;
+namespace ZMake.Api;
 
 public sealed class BuildContext
 {
     private readonly ILogger _logger;
 
-    public TaskEngine Engine { get; }
-
-    public ConcurrentDictionary<object, object> Items { get; } = [];
-
-    public ConcurrentDictionary<ArtifactName, Artifact> Artifacts { get; } = [];
-
-    public BuildContext(ILoggerFactory loggerFactory,TaskEngine engine)
+    public BuildContext(ILoggerFactory loggerFactory, TaskEngine engine)
     {
         _logger = loggerFactory.CreateLogger(nameof(BuildContext));
         Engine = engine;
     }
+
+    public long Id { get; } =
+        ((long)RandomNumberGenerator.GetInt32(int.MinValue, int.MaxValue) << 32) |
+        (uint)RandomNumberGenerator.GetInt32(int.MinValue, int.MaxValue);
+
+    public TaskEngine Engine { get; }
+
+    public ConcurrentDictionary<object, object> Items { get; } = [];
+
+    private readonly CancellationTokenSource _tokenSource = new();
+
+    public CancellationToken CancellationToken => _tokenSource.Token;
+
+    public ConcurrentDictionary<ArtifactName, Artifact> Artifacts { get; } = [];
 
     public Task BuildArtifacts(params ArtifactName[] artifactNames)
     {
         List<ITarget> targets = [];
 
         foreach (var artifactName in artifactNames)
-        {
             if (Artifacts.TryGetValue(artifactName, out var artifact))
-            {
                 targets.AddRange(artifact.Set.AllTargets.Values);
-            }
             else
-            {
                 throw new ArgumentException($"can not found artifact `{artifactName}`");
-            }
-        }
 
         return BuildTargets(targets.Select(t => t.Name).ToArray());
     }
@@ -55,7 +58,7 @@ public sealed class BuildContext
         return Task.WhenAll(tasks);
     }
 
-    public Task BuildTypedTargets(params Name[] targetTypes)
+    public Task BuildTypedTargets(params TargetType[] targetTypes)
     {
         List<ITarget> targets = [];
 
@@ -65,15 +68,10 @@ public sealed class BuildContext
         {
             var typedTargets = artifact.Value.Set.TypedTargets;
             foreach (var targetType in targetTypes)
-            {
                 if (typedTargets.TryGetValue(targetType, out var typedTarget))
-                {
                     targets.Add(typedTarget);
-                }
-            }
         }
 
         return BuildTargets(targets.Select(t => t.Name).ToArray());
     }
-
 }

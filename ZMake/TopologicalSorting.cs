@@ -1,6 +1,8 @@
-﻿namespace ZMake;
+﻿using ZMake.Api;
 
-public static class TopologicalSorting
+namespace ZMake;
+
+internal static class TopologicalSorting
 {
     public static Task Sort(
         IReadOnlyDictionary<ArtifactName, Artifact> targets,
@@ -9,14 +11,8 @@ public static class TopologicalSorting
         ITarget target)
     {
         var found = searchStatus.TryGetValue(target.Name, out var inSearch);
-        if (found && inSearch)
-        {
-            throw new ArgumentException($"find circular dependency in searching of {target.Name}");
-        }
-        if (found)
-        {
-            return searched[target.Name];
-        }
+        if (found && inSearch) throw new ArgumentException($"find circular dependency in searching of {target.Name}");
+        if (found) return searched[target.Name];
 
         searchStatus[target.Name] = true;
 
@@ -24,24 +20,19 @@ public static class TopologicalSorting
         List<Task> parentTasks = new(requirements.Length);
 
         foreach (var requirementName in requirements)
-        {
-            if (targets.TryGetValue(requirementName.ArtifactName,out var requirementArtifact)
+            if (targets.TryGetValue(requirementName.ArtifactName, out var requirementArtifact)
                 && requirementArtifact.Set.AllTargets.TryGetValue(requirementName, out var requirement))
-            {
                 try
                 {
-                    parentTasks.Add(Sort(targets, searchStatus,searched, requirement));
+                    parentTasks.Add(Sort(targets, searchStatus, searched, requirement));
                 }
                 catch (Exception exception)
                 {
                     throw new AggregateException($"get an exception in searching of {target.Name}", exception);
                 }
-            }
             else
-            {
-                throw new InvalidOperationException($"can not find requirement `{requirementName}` of target `{target}` in all targets");
-            }
-        }
+                throw new InvalidOperationException(
+                    $"can not find requirement `{requirementName}` of target `{target}` in all targets");
 
         searchStatus[target.Name] = false;
         var task = Task.WhenAll([..target.Tasks, ..parentTasks]);
