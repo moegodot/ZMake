@@ -1,10 +1,12 @@
 ﻿using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
-namespace ZMake;
+namespace ZMake.Api;
 
 /// <summary>
 /// This powerful program finder let you find everything you want.
 /// </summary>
+[PublicAPI]
 public class FileFinder
 {
     public List<string> SearchPaths { get; init; } = [];

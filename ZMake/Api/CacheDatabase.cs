@@ -8,43 +8,46 @@ using Vogen;
 
 namespace ZMake.Api;
 
-public class CacheDatabase<T> : IDisposable
+public class CacheDatabase<TKey,TValue> : IDisposable
 {
-    private IZoneTree<string, string> Database { get; }
+    public IZoneTree<TKey, TValue> Database { get; }
 
     private IMaintainer Maintainer { get; }
 
-    public CacheDatabase(string dataPath)
+    public CacheDatabase(string dataPath,Action<ZoneTreeFactory<TKey, TValue>> build)
     {
-        Database = new ZoneTreeFactory<string, string>()
-            .SetComparer(new StringInvariantComparerAscending())
+        var factory = new ZoneTreeFactory<TKey, TValue>()
+            //.SetComparer(new StringInvariantComparerAscending())
             .SetDataDirectory(dataPath)
-            .SetKeySerializer(new Utf8StringSerializer())
-            .SetValueSerializer(new Utf8StringSerializer())
+            //.SetKeySerializer(new Utf8StringSerializer())
+            //.SetValueSerializer(new Utf8StringSerializer())
             .ConfigureWriteAheadLogOptions((options =>
             {
                 options.WriteAheadLogMode = WriteAheadLogMode.None;
-            }))
-            .OpenOrCreate();
+            }));
+
+        build(factory);
+
+        Database = factory.OpenOrCreate();
 
         Maintainer = Database.CreateMaintainer();
         Maintainer.EnableJobForCleaningInactiveCaches = true;
         Maintainer.ThresholdForMergeOperationStart = 2;
     }
 
-    public bool NeedUpdate(string path, T data)
+    public bool NeedUpdate(TKey path, TValue data)
     {
         if (Database.TryGet(path, out var value))
         {
-            return value.Equals(data.ToString());
+            return value.Equals(data);
         }
         return true;
     }
 
-    public void AddItem(string path, T data)
+    public void AddItem(TKey path, TValue data)
     {
         if (data == null) throw new ArgumentNullException(nameof(data));
-        Database.Upsert(path, data.ToString());
+        Database.Upsert(path, data);
     }
 
     public void SaveDatabase()

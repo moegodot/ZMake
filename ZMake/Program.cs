@@ -53,6 +53,14 @@ internal static class Program
 
         Log.AppStart();
 
+        foreach (var found in (IEnumerable<IBuildTool<CToolArgument>>)[
+                     ..C.Find(C.Gcc, FileFinder.FromPathEnvironmentVariables()),
+                     ..C.Find(C.Clang, FileFinder.FromPathEnvironmentVariables()),
+                     ..C.Find(C.Msvc, FileFinder.FromPathEnvironmentVariables())])
+        {
+            Console.WriteLine(found);
+        }
+
         var exitCode = await Application(args, loggerFactory);
 
         Log.AppStop(exitCode);
@@ -60,7 +68,7 @@ internal static class Program
         return exitCode;
     }
 
-    private class Commands(ILoggerFactory factory) : IDisposable
+    internal class Commands(ILoggerFactory factory) : IDisposable
     {
         private Owned<BuildContext>? _context;
         private ILoggerFactory LoggerFactory { get; } = factory;

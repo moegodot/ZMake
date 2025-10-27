@@ -11,6 +11,7 @@ public static class VsWhere
     public static string GetInstallPath(string requiredComponent)
     {
         using Process process = new();
+        process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardError = true;
         process.StartInfo.RedirectStandardOutput = true;
         process.StartInfo.RedirectStandardInput = true;
@@ -28,19 +29,59 @@ public static class VsWhere
 
         if (process.ExitCode != 0)
         {
-            throw new InvalidOperationException("vswhere.exe exit with code non-zero");
+            throw new InvalidOperationException($"vswhere.exe exit with code {process.ExitCode}");
         }
 
         return process.StandardOutput.ReadToEnd().Trim();
     }
 
-    public static string GetX64Tool()
+    public static string GetVcDevCmdBatForX64()
     {
-        return GetInstallPath("Microsoft.VisualStudio.Component.VC.Tools.x86.x64");
+        var path = GetInstallPath("Microsoft.VisualStudio.Component.VC.Tools.x86.x64");
+        return Path.Combine(path, "Common7/Tools/VsDevCmd.bat");
     }
 
-    public static string GetArm64Tool()
+    public static string GetVcDevCmdBatForArm64()
     {
-        return GetInstallPath("Microsoft.VisualStudio.Component.VC.Tools.ARM64");
+        var path = GetInstallPath("Microsoft.VisualStudio.Component.VC.Tools.ARM64");
+        return Path.Combine(path, "Common7/Tools/VsDevCmd.bat");
+    }
+
+    public static async Task<Dictionary<string, string>>
+        GetBatEnvironment(
+        string bat,
+        string hostArch,
+        string arch)
+    {
+        using Process process = new();
+        process.StartInfo.FileName = "cmd.exe";
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.RedirectStandardInput = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.ArgumentList.Add("/c");
+        process.StartInfo.ArgumentList.Add($"\"{bat}\" -no_logo -host_arch={hostArch} -arch={arch} & SET");
+        process.StartInfo.Environment.Clear();
+        process.StartInfo.EnvironmentVariables.Clear();
+        if (!process.Start())
+        {
+            throw new InvalidOperationException($"Can not start process:{bat}");
+        }
+
+        process.StandardInput.Close();
+        await process.WaitForExitAsync();
+
+        var str = await process.StandardOutput.ReadToEndAsync();
+        var env = new Dictionary<string, string>();
+        var dictArray = str.Replace("\r\n","\n").Replace("\r","\n").Split(['=', '\n']);
+        var index = 0;
+
+        while (index != dictArray.Length)
+        {
+            env[dictArray[index]] = env[dictArray[index + 1]];
+            index += 2;
+        }
+
+        return env;
     }
 }

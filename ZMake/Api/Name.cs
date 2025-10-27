@@ -3,9 +3,12 @@ using System.Text.RegularExpressions;
 
 namespace ZMake.Api;
 
-public sealed class Name : IEquatable<Name>, IParsable<Name>
+public sealed partial class Name : IEquatable<Name>, IParsable<Name>
 {
-    public static readonly Regex NameRegex = new("^[a-zA-Z_]+[a-zA-Z0-9_]*$");
+    [GeneratedRegex("^[a-zA-Z_]+[a-zA-Z0-9_]*$")]
+    private static partial Regex GeneratorNameRegex();
+
+    public static readonly Regex NameRegex = GeneratorNameRegex();
 
     private Name(ArtifactName artifactName, string[] names)
     {
@@ -81,10 +84,11 @@ public sealed class Name : IEquatable<Name>, IParsable<Name>
         return true;
     }
 
-    public static Name Create(ArtifactName artifactName, IEnumerable<string> names)
+    public static Name Create(ArtifactName artifactName, params IEnumerable<string> names)
     {
         if (!TryCreate(artifactName, names, out var result)) throw new ArgumentException("invalid names format");
 
         return result;
     }
+
 }

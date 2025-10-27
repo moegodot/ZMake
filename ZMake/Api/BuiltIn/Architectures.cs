@@ -9,5 +9,5 @@ public static class Architectures
 
     public static readonly Architecture X86 = MakeBuiltinArchitecture(Version.V1V0V0, "x86");
     public static readonly Architecture X64 = MakeBuiltinArchitecture(Version.V1V0V0, "x64");
-    public static readonly Architecture AArch64 = MakeBuiltinArchitecture(Version.V1V0V0, "aarch64");
+    public static readonly Architecture Arm64 = MakeBuiltinArchitecture(Version.V1V0V0, "arm64");
 }

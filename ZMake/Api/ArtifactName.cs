@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using JetBrains.Annotations;
 using Semver;
 
 namespace ZMake.Api;
@@ -8,10 +9,19 @@ namespace ZMake.Api;
 ///     Artifact coordinates are most often represented as groupId:artifactId:version.
 ///     It should be constant.
 /// </summary>
-public sealed class ArtifactName : IEquatable<ArtifactName>, IParsable<ArtifactName>
+public sealed partial class ArtifactName : IEquatable<ArtifactName>, IParsable<ArtifactName>
 {
-    public static readonly Regex GroupIdRegex = new("^[a-zA-Z_]+[a-zA-Z0-9_]*(\\.[a-zA-Z_]+[a-zA-Z0-9_]*)+$");
-    public static readonly Regex ArtifactIdRegex = new("^[a-zA-Z_]+[a-zA-Z0-9_]*$");
+    [GeneratedRegex("^[a-zA-Z_]+[a-zA-Z0-9_]*(\\.[a-zA-Z_]+[a-zA-Z0-9_]*)+$")]
+    private static partial Regex GeneratorGroupIdRegex();
+
+    [PublicAPI]
+    public static readonly Regex GroupIdRegex = GeneratorGroupIdRegex();
+
+    [GeneratedRegex("^[a-zA-Z_]+[a-zA-Z0-9_]*$")]
+    private static partial Regex GeneratorArtifactIdRegex();
+
+    [PublicAPI]
+    public static readonly Regex ArtifactIdRegex = GeneratorArtifactIdRegex();
 
     private ArtifactName(string groupId, string artifactId, SemVersion version)
     {
@@ -23,13 +33,17 @@ public sealed class ArtifactName : IEquatable<ArtifactName>, IParsable<ArtifactN
         Version = version;
     }
 
-    public string GroupId { get; init; }
-    public string ArtifactId { get; init; }
+    [PublicAPI]
+    public string GroupId { get; }
+
+    [PublicAPI]
+    public string ArtifactId { get; }
 
     /// <summary>
     ///     Semver 2.0
     /// </summary>
-    public SemVersion Version { get; init; }
+    [PublicAPI]
+    public SemVersion Version { get; }
 
     public bool Equals(ArtifactName? other)
     {
@@ -58,6 +72,7 @@ public sealed class ArtifactName : IEquatable<ArtifactName>, IParsable<ArtifactN
         return new ArtifactName(oldArtifact.GroupId, oldArtifact.ArtifactId, newVersion);
     }
 
+    [PublicAPI]
     public static bool TryParse(
         string text,
         [NotNullWhen(true)] out ArtifactName? result,
@@ -66,18 +81,19 @@ public sealed class ArtifactName : IEquatable<ArtifactName>, IParsable<ArtifactN
         result = null;
         reason = null;
 
-        var splitted = text.Split(':');
+        var split = text.Split(':');
 
-        if (splitted.Length != 3)
+        if (split.Length != 3)
         {
             reason = "can not found two `:` in the string";
             return false;
         }
 
-        return TryCreate(splitted[0], splitted[1],
-            splitted[2], out result, out reason);
+        return TryCreate(split[0], split[1],
+            split[2], out result, out reason);
     }
 
+    [PublicAPI]
     public static bool TryCreate(
         string groupId,
         string artifactId,
