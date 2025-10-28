@@ -58,6 +58,7 @@ public class Tool : ITool
         {
             process.StartInfo.ArgumentList.Add(argument);
         }
+
         foreach(var env in environment){
             process.StartInfo.Environment.Add(env.Key,env.Value);
         }
@@ -87,5 +88,10 @@ public class Tool : ITool
     public override int GetHashCode()
     {
         return ProgramPath?.GetHashCode() ?? string.Empty.GetHashCode();
+    }
+
+    public UInt128 GetHashCode128()
+    {
+        return HashCode128.Get(ProgramPath ?? string.Empty);
     }
 }

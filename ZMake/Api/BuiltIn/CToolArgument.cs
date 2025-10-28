@@ -3,7 +3,7 @@ namespace ZMake.Api.BuiltIn;
 /// <summary>
 /// Used in both c and cpp
 /// </summary>
-public record CToolArgument : ToolArguments
+public class CToolArgument : ToolArguments
 {
     public List<string> Definitions { get; set; }
 
@@ -30,5 +30,16 @@ public record CToolArgument : ToolArguments
             Optimization = OptimizationLevel.FavourSpeedMedium;
             Definitions = ["NDEBUG"];
         }
+    }
+
+    public override UInt128 GetHashCode128()
+    {
+        return HashCode128.Combine(
+            HashCode128.Get(nameof(CToolArgument)),
+            Definitions.GetEnumerableHashCode128(),
+            HashCode128.Get(LanguageVersion ?? string.Empty),
+            HashCode128.Get(Optimization?.ToString() ?? string.Empty),
+            HashCode128.Get(Permissive?.ToString() ?? string.Empty),
+            HashCode128.Get(UseUtf8?.ToString() ?? string.Empty));
     }
 }

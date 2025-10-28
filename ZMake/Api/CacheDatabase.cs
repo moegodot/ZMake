@@ -9,6 +9,7 @@ using Vogen;
 namespace ZMake.Api;
 
 public class CacheDatabase<TKey,TValue> : IDisposable
+    where TValue:IEquatable<TValue>
 {
     public IZoneTree<TKey, TValue> Database { get; }
 
@@ -23,7 +24,7 @@ public class CacheDatabase<TKey,TValue> : IDisposable
             //.SetValueSerializer(new Utf8StringSerializer())
             .ConfigureWriteAheadLogOptions((options =>
             {
-                options.WriteAheadLogMode = WriteAheadLogMode.None;
+                options.WriteAheadLogMode = WriteAheadLogMode.AsyncCompressed;
             }));
 
         build(factory);
@@ -35,11 +36,22 @@ public class CacheDatabase<TKey,TValue> : IDisposable
         Maintainer.ThresholdForMergeOperationStart = 2;
     }
 
-    public bool NeedUpdate(TKey path, TValue data)
+    public static CacheDatabase<string, UInt128>
+        CreateEmptyStrInt128(string dataDir)
+    {
+        return new CacheDatabase<string, UInt128>(dataDir, (factory =>
+        {
+            factory.SetComparer(new StringInvariantComparerAscending())
+                .SetKeySerializer(new Utf8StringSerializer())
+                .SetValueSerializer(new UInt128Serializer());
+        }));
+    }
+
+    public bool CheckChanged(TKey path, TValue data)
     {
         if (Database.TryGet(path, out var value))
         {
-            return value.Equals(data);
+            return value?.Equals(data) == false;
         }
         return true;
     }

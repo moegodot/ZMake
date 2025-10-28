@@ -2,7 +2,7 @@ using Semver;
 
 namespace ZMake.Api;
 
-public interface ITool
+public interface ITool : IGetHashCode128
 {
     string? ProgramPath { get; }
 

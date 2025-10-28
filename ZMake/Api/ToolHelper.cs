@@ -4,8 +4,8 @@ namespace ZMake.Api;
 
 public static class ToolHelper
 {
-    public static IEnumerable<Task<ITool<T>>> WithVersion<T>(
-        this IEnumerable<ITool<T>> tools,
+    public static IEnumerable<Task<ITool>> WithVersion(
+        this IEnumerable<ITool> tools,
         Func<SemVersion,bool> requirements)
     {
         return tools
@@ -18,15 +18,15 @@ public static class ToolHelper
             .TakeWhile(tool => requirements(tool.Result.GetVersion()!));
     }
 
-    public static IEnumerable<Task<ITool<T>>> WithVersionGreaterThan<T>(
-        this IEnumerable<ITool<T>> tools,
+    public static IEnumerable<Task<ITool>> WithVersionGreaterThan(
+        this IEnumerable<ITool> tools,
         SemVersion minimumVersion)
     {
         return tools.WithVersion(version => version.CompareSortOrderTo(minimumVersion) > 0);
     }
 
-    public static IEnumerable<Task<ITool<T>>> WithVersionLessenThan<T>(
-        this IEnumerable<ITool<T>> tools,
+    public static IEnumerable<Task<ITool>> WithVersionLessenThan(
+        this IEnumerable<ITool> tools,
         SemVersion maximumVersion)
     {
         return tools.WithVersion(version => version.CompareSortOrderTo(maximumVersion) < 0);
