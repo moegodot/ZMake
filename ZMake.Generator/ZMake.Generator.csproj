@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <IsPackable>true</IsPackable>
+        <PackAsTool>false</PackAsTool>
+
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+
+        <RootNamespace>ZMake.Generator</RootNamespace>
+        <PackageId>MoeDotKawayi.ZMake.Generator</PackageId>
+        <Description>The SourceGenerator of ZMake</Description>
+
+        <Authors>MoeGodot</Authors>
+        <Copyright>Copyright © 2025 MoeGodot</Copyright>
+
+        <RepositoryUrl>https://github.com/moegodot/ZMake</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/moegodot/ZMake</PackageProjectUrl>
+
+        <Version>1.0.0</Version>
+        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.14.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all"/>
+
+        <PackageReference Include="PillarOfPillar" Version="1.0.5"  GeneratePathProperty="true" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Package the generator in the analyzer directory of the nuget package -->
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Include="$(PKGPillarOfPillar)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+
+    <Target Name="GetDependencyTargetPaths">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGPillarOfPillar)\lib\netstandard2.0\PillarOfPillar.dll" IncludeRuntimeDependency="false" />
+        </ItemGroup>
+    </Target>
+
+</Project>

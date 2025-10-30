@@ -4,7 +4,7 @@ public static class Oses
 {
     private static Os MakeBuiltinOs(ArtifactName version, string name)
     {
-        return Os.From(Name.Create(version, ["os", name]));
+        return Os.From(Name.Create(version, $"os.{name}"));
     }
 
     public static readonly Os Windows = MakeBuiltinOs(Version.V1V0V0, "windows");

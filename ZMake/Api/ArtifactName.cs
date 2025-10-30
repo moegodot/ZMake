@@ -9,19 +9,18 @@ namespace ZMake.Api;
 ///     Artifact coordinates are most often represented as groupId:artifactId:version.
 ///     It should be constant.
 /// </summary>
-public sealed partial class ArtifactName : IEquatable<ArtifactName>, IParsable<ArtifactName>
+public sealed class ArtifactName :
+    IEquatable<ArtifactName>,
+    ISpanParsable<ArtifactName>
 {
-    [GeneratedRegex("^[a-zA-Z_]+[a-zA-Z0-9_]*(\\.[a-zA-Z_]+[a-zA-Z0-9_]*)+$")]
-    private static partial Regex GeneratorGroupIdRegex();
+    [PublicAPI] public static readonly Regex GroupIdRegex = NameRule.MustHaveMultiplePartsRegex();
 
-    [PublicAPI]
-    public static readonly Regex GroupIdRegex = GeneratorGroupIdRegex();
+    [PublicAPI] public static readonly Regex ArtifactIdRegex = NameRule.MaybeSinglePartRegex();
 
-    [GeneratedRegex("^[a-zA-Z_]+[a-zA-Z0-9_]*$")]
-    private static partial Regex GeneratorArtifactIdRegex();
-
-    [PublicAPI]
-    public static readonly Regex ArtifactIdRegex = GeneratorArtifactIdRegex();
+    private static FormatException InvalidArtifactNameFormatException(string name)
+    {
+        return new FormatException($"invalid artifact name format: {name}");
+    }
 
     private ArtifactName(string groupId, string artifactId, SemVersion version)
     {
@@ -49,12 +48,47 @@ public sealed partial class ArtifactName : IEquatable<ArtifactName>, IParsable<A
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return GroupId.Equals(other.GroupId) && ArtifactId.Equals(other.ArtifactId) && Version.Equals(other.Version);
+        return GroupId.Equals(other.GroupId)
+            && ArtifactId.Equals(other.ArtifactId)
+            && Version.Equals(other.Version);
+    }
+
+    public static ArtifactName Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
+    {
+        if (!TryParse(s, provider, out var result))
+            throw InvalidArtifactNameFormatException(s.ToString());
+
+        return result;
+    }
+
+    public static bool TryParse(
+        ReadOnlySpan<char> s,
+    IFormatProvider? provider,
+    [MaybeNullWhen(false)] out ArtifactName result)
+    {
+        unsafe
+        {
+            Span<Range> parts = stackalloc Range[3];
+
+            var splitCount = s.Split(parts, ':');
+
+            if (splitCount != 3)
+            {
+                result = null;
+                return false;
+            }
+
+            return TryCreate(
+                s[parts[0]],
+                s[parts[1]],
+                s[parts[2]],
+                out result);
+        }
     }
 
     public static ArtifactName Parse(string text, IFormatProvider? provider)
     {
-        return !TryParse(text, out var result, out var reason) ? throw new FormatException(reason) : result;
+        return Parse((ReadOnlySpan<char>)text, provider);
     }
 
     public static bool TryParse(
@@ -62,9 +96,7 @@ public sealed partial class ArtifactName : IEquatable<ArtifactName>, IParsable<A
         IFormatProvider? provider,
         [MaybeNullWhen(false)] out ArtifactName result)
     {
-        if (s is not null) return TryParse(s, out result, out _);
-        result = null;
-        return false;
+        return TryParse((ReadOnlySpan<char>)s, provider, out result);
     }
 
     public static ArtifactName CreateWithNewVersion(ArtifactName oldArtifact, SemVersion newVersion)
@@ -72,83 +104,92 @@ public sealed partial class ArtifactName : IEquatable<ArtifactName>, IParsable<A
         return new ArtifactName(oldArtifact.GroupId, oldArtifact.ArtifactId, newVersion);
     }
 
-    [PublicAPI]
-    public static bool TryParse(
-        string text,
-        [NotNullWhen(true)] out ArtifactName? result,
-        [NotNullWhen(false)] out string? reason)
+    public static ArtifactName CreateWithNewArtifactId(ArtifactName oldArtifact, string newArtifactId)
     {
-        result = null;
-        reason = null;
-
-        var split = text.Split(':');
-
-        if (split.Length != 3)
-        {
-            reason = "can not found two `:` in the string";
-            return false;
-        }
-
-        return TryCreate(split[0], split[1],
-            split[2], out result, out reason);
+        return new ArtifactName(oldArtifact.GroupId, newArtifactId, oldArtifact.Version);
     }
 
-    [PublicAPI]
+    public static ArtifactName CreateWithNewGroupId(ArtifactName oldArtifact, string newGroupId)
+    {
+        return new ArtifactName(newGroupId, oldArtifact.ArtifactId, oldArtifact.Version);
+    }
+
     public static bool TryCreate(
-        string groupId,
-        string artifactId,
-        string version,
-        [NotNullWhen(true)] out ArtifactName? result,
-        [NotNullWhen(false)] out string? reason)
+        ReadOnlySpan<char> groupId,
+        ReadOnlySpan<char> artifactId,
+        SemVersion version,
+        [NotNullWhen(true)] out ArtifactName? result)
     {
         result = null;
-        reason = null;
 
         if (!GroupIdRegex.IsMatch(groupId))
         {
-            reason = "invalid groupId format";
             return false;
         }
 
         if (!ArtifactIdRegex.IsMatch(artifactId))
         {
-            reason = "invalid artifactId format";
             return false;
         }
 
-        if (!SemVersion.TryParse(version, SemVersionStyles.Strict, out var semver))
-        {
-            reason = "invalid version(semver 2.0) format";
-            return false;
-        }
+        result = new ArtifactName(groupId.ToString(), artifactId.ToString(), version);
 
-        result = new ArtifactName(groupId, artifactId, semver);
         return true;
     }
 
-    public static ArtifactName Create(string groupId,
-        string artifactId,
-        string version)
+    [PublicAPI]
+    public static bool TryCreate(
+        ReadOnlySpan<char> groupId,
+        ReadOnlySpan<char> artifactId,
+        ReadOnlySpan<char> version,
+        [NotNullWhen(true)] out ArtifactName? result)
     {
-        return !TryCreate(groupId, artifactId, version,
-            out var result, out var reason)
-            ? throw new FormatException(reason)
-            : result;
+        var versionString = version.ToString();
+        if (!SemVersion.TryParse(versionString, SemVersionStyles.Strict, out var semver))
+        {
+            result = null;
+            return false;
+        }
+
+        return TryCreate(groupId, artifactId, semver, out result);
     }
 
-    public static ArtifactName Create(string groupId,
-        string artifactId,
+    public static ArtifactName Create(
+        ReadOnlySpan<char> groupId,
+        ReadOnlySpan<char> artifactId,
+        ReadOnlySpan<char> version)
+    {
+        if (!TryCreate(groupId, artifactId, version, out var result))
+            throw InvalidArtifactNameFormatException($"{groupId}:{artifactId}:{version}");
+
+        return result;
+    }
+
+    public static ArtifactName Create(
+        ReadOnlySpan<char> groupId,
+        ReadOnlySpan<char> artifactId,
         SemVersion version)
     {
-        return !TryCreate(groupId, artifactId, version.ToString(),
-            out var result, out var reason)
-            ? throw new FormatException(reason)
-            : result;
+        if (!TryCreate(groupId, artifactId, version, out var result))
+            throw InvalidArtifactNameFormatException($"{groupId}:{artifactId}:{version}");
+
+        return result;
+    }
+
+    bool IEquatable<ArtifactName>.Equals(ArtifactName? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return GroupId.Equals(other.GroupId)
+            && ArtifactId.Equals(other.ArtifactId)
+            && Version.Equals(other.Version);
     }
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj) || (obj is ArtifactName other && Equals(other));
+        return obj is not null &&
+        (ReferenceEquals(this, obj)
+        || (obj is ArtifactName other && ((IEquatable<ArtifactName>)this).Equals(other)));
     }
 
     public override int GetHashCode()

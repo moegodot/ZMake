@@ -4,15 +4,15 @@ public static class C
 {
     private static ToolName MakeBuiltinCompiler(ArtifactName version, string name)
     {
-        return ToolName.From(Name.Create(version, ["tool","compiler","c", name]));
+        return ToolName.From(Name.Create(version, $"tool.compiler.c.{name}"));
     }
 
-    public static readonly ToolType Compiler = ToolType.From(Name.Create(Version.V1V0V0, "tool","compiler","c"));
+    public static readonly ToolType Compiler = ToolType.From(Name.Create(Version.V1V0V0, "tool.compiler.c"));
     public static readonly ToolName Gcc = MakeBuiltinCompiler(Version.V1V0V0, "gcc");
     public static readonly ToolName Clang = MakeBuiltinCompiler(Version.V1V0V0, "clang");
     public static readonly ToolName Msvc = MakeBuiltinCompiler(Version.V1V0V0, "msvc");
 
-    public static IEnumerable<IBuildTool<CToolArgument>> Find(ToolName tool,FileFinder finder)
+    public static IEnumerable<IBuildTool<CToolArgument>> Find(ToolName tool, FileFinder finder)
     {
         var target = "clang";
 
@@ -31,7 +31,8 @@ public static class C
             target = "cl";
         }
 
-        if (target.Equals("cl")){
+        if (target.Equals("cl"))
+        {
             return finder.Search(target).Select(s => new MsvcStyleCCompiler(s, tool, Compiler));
         }
         return finder.Search(target).Select(s => new ClangStyleCCompiler(s, tool, Compiler));

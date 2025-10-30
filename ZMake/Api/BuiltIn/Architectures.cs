@@ -4,7 +4,7 @@ public static class Architectures
 {
     private static Architecture MakeBuiltinArchitecture(ArtifactName version, string name)
     {
-        return Architecture.From(Name.Create(version, ["architecture", name]));
+        return Architecture.From(Name.Create(version, $"architecture.{name}"));
     }
 
     public static readonly Architecture X86 = MakeBuiltinArchitecture(Version.V1V0V0, "x86");

@@ -1,20 +1,28 @@
+using System.Collections.Immutable;
+
 namespace ZMake.Api;
 
-public sealed class Target : ITarget
+public class Target
 {
-    public Target(Name name,
-        IEnumerable<Name> requirements,
-        IEnumerable<Task> tasks)
+    public Target(
+        Name name,
+        AccessibilityLevel accessibilityLevel,
+        ImmutableArray<Target> privateDependencies,
+        ImmutableArray<Name> publicDependencies,
+        ImmutableArray<Task<Task>> tasks)
     {
         Name = name;
-        Requirements = requirements.ToArray();
-        Tasks = tasks.ToArray();
+        PrivateDependencies = privateDependencies;
+        PublicDependencies = publicDependencies;
+        Tasks = tasks;
+        AccessibilityLevel = accessibilityLevel;
     }
 
-    public Name Name { get; init; }
-    public IEnumerable<Name> Requirements { get; init; }
-    public IEnumerable<Task> Tasks { get; init; }
-
+    public Name Name { get; }
+    public AccessibilityLevel AccessibilityLevel { get; }
+    public ImmutableArray<Target> PrivateDependencies { get; }
+    public ImmutableArray<Name> PublicDependencies { get; }
+    public ImmutableArray<Task<Task>> Tasks { get; }
     public override string ToString()
     {
         return $"(Target {Name})";

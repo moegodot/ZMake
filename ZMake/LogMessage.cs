@@ -70,6 +70,14 @@ internal sealed partial class LogMessage : EventSource
     [ZLoggerMessage(EventId = 6, Level = LogLevel.Debug, Message = "Target {targetName} was finished")]
     internal static partial void TargetStop(ILogger logger, Exception? exception, string targetName);
 
+    [NonEvent]
+    [ZLoggerMessage(Level = LogLevel.Information, Message = "Detect system information {item} = {value}")]
+    internal static partial void DetectSystemInformation(ILogger logger,string item,string value);
+
+    [NonEvent]
+    [ZLoggerMessage(Level = LogLevel.Information, Message = "Use source dir `{source}`,build dir `{build}`")]
+    internal static partial void UseDirectory(ILogger logger,string source,string build);
+
     public static class Keywords // This is a bitvector
     {
         public const EventKeywords Application = (EventKeywords)0x0001;

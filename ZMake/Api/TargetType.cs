@@ -2,7 +2,7 @@
 
 namespace ZMake.Api;
 
-[ValueObject<Name>]
+[ValueObject<Name>(conversions: Conversions.None)]
 public sealed partial class TargetType
 {
 }

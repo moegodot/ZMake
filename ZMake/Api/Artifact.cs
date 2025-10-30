@@ -14,5 +14,6 @@ public sealed class Artifact
     }
 
     public ArtifactName Name { get; }
+
     public TargetSet Set { get; }
 }

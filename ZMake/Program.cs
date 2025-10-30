@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 using ConsoleAppFramework;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,11 +10,20 @@ using ZLogger;
 using ZMake.Api;
 using ZMake.Api.BuiltIn;
 using static ZMake.LogMessage;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace ZMake;
 
 internal static class Program
 {
+    public const bool IsBootstrapMode =
+#if ZMAKE_BOOTSTRAP_MODE
+    true
+#else
+    false
+#endif
+    ;
+
     private static async Task<int> Application(
         string[] args,
         ILoggerFactory loggerFactory)
@@ -27,13 +37,21 @@ internal static class Program
                     collection.AddSingleton<ILoggerFactory>(loggerFactory);
                 });
 
-            app.Add<Commands>();
+#if ZMAKE_BOOTSTRAP_MODE
+            app.Add<BootstrapCommands>();
+#else
+            app.Add<InternalCommands>();
+#endif
 
             await app.RunAsync(args);
         }
         catch (Exception exception)
         {
+#if ZMAKE_USE_DEMYSTIFER
             exception.PrintColoredStringDemystified();
+#else
+            Console.WriteLine(exception.ToString());
+#endif
             return 1;
         }
 
@@ -53,10 +71,16 @@ internal static class Program
 
         Log.AppStart();
 
+        _ = Assembly.GetExecutingAssembly().GetManifestResourceNames().Select(name =>
+        {
+            Console.WriteLine(name);
+            return 1;
+        }).ToArray();
+
         foreach (var found in (IEnumerable<IBuildTool<CToolArgument>>)[
-                     ..C.Find(C.Gcc, FileFinder.FromPathEnvironmentVariables()),
-                     ..C.Find(C.Clang, FileFinder.FromPathEnvironmentVariables()),
-                     ..C.Find(C.Msvc, FileFinder.FromPathEnvironmentVariables())])
+                    ..C.Find(C.Gcc, FileFinder.FromPathAndPathExt()),
+                    ..C.Find(C.Clang, FileFinder.FromPathAndPathExt()),
+                    ..C.Find(C.Msvc, FileFinder.FromPathAndPathExt())])
         {
             Console.WriteLine(found);
         }
@@ -71,15 +95,22 @@ internal static class Program
     internal class Commands(ILoggerFactory factory) : IDisposable
     {
         private Owned<BuildContext>? _context;
+
+        protected RootPathService? RootPathService = null;
+
         private ILoggerFactory LoggerFactory { get; } = factory;
 
-        public BuildContext Context
+        protected BuildContext Context
         {
             get
             {
                 if (_context != null) return _context.Value;
+                if (RootPathService == null)
+                {
+                    throw new InvalidOperationException("RootPathService not set");
+                }
 
-                var container = new Container(LoggerFactory);
+                var container = new Container(LoggerFactory, RootPathService);
 
                 _context = container.Resolve();
 
@@ -87,6 +118,35 @@ internal static class Program
 
                 return _context.Value;
             }
+        }
+
+        protected void SearchRootPath()
+        {
+            if (IsBootstrapMode)
+#pragma warning disable CS0162 // 检测到不可到达的代码
+            {
+                var directories = Maintenance.SearchSourceAndBuildDirectory();
+
+                if (directories is null)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to find ZMake build directory,check zmake.build.lock file exists");
+                }
+
+                RootPathService = new RootPathService(
+                    directories.Value.source,
+                    directories.Value.build);
+
+                UseDirectory(Logger,
+                    RootPathService.RootSourcePath,
+                    RootPathService.RootBuildPath);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "The SearchRootPath() is only available in bootstrap mode");
+            }
+#pragma warning restore CS0162 // 检测到不可到达的代码
         }
 
         public void Dispose()
@@ -100,7 +160,10 @@ internal static class Program
             LoggerFactory.Dispose();
             Log.Dispose();
         }
+    }
 
+    internal class BootstrapCommands(ILoggerFactory factory) : Commands(factory)
+    {
         /// <summary>
         ///     Build targets that has the specified type.
         ///     If type is not an invalid name,it will be parsed as ZMake's built in type.
@@ -109,11 +172,61 @@ internal static class Program
         ///     For convenience,`make` will be alias to `make build`.
         /// </summary>
         /// <param name="type">The type of targets that will be built.</param>
-        public async Task Make(string? type = null)
+        public async Task Make(string type = "build")
         {
             Log.CommandStart(nameof(Make));
 
-            type ??= "build";
+            SearchRootPath();
+
+            var provider = new MaintenanceArtifactProvider();
+            provider.Bind(Context);
+            foreach (var artifact in provider.Get())
+            {
+                if (!Context.Artifacts.TryAdd(artifact.Name, artifact))
+                {
+                    throw new InvalidOperationException(
+                        $"failed to add artifact `{artifact.Name}` to Context.Artifacts");
+                }
+            }
+
+            await Context.BuildArtifacts(
+                provider
+                .Get()
+                .Select(artifact => artifact.Name)
+                .ToArray());
+
+            Log.CommandStop(nameof(Make));
+        }
+
+        /// <summary>
+        ///     Initialize a repository.
+        /// </summary>
+        /// <param name="buildDirectory">The build directory of the target repository.</param>
+        /// <param name="sourceDirectory">The source directory of the target repository.</param>
+        public async Task Initialize(string sourceDirectory, string buildDirectory)
+        {
+            Log.CommandStart(nameof(Initialize));
+
+            await Maintenance.CreateBuildDirectory(sourceDirectory, buildDirectory);
+
+            Log.CommandStop(nameof(Initialize));
+        }
+    }
+
+    internal class InternalCommands(ILoggerFactory factory) : Commands(factory)
+    {
+        public async Task Make(
+            string rootSourceDirectory,
+            string rootBuildDirectory,
+            string type)
+        {
+            Log.CommandStart(nameof(Make));
+
+            this.RootPathService = new RootPathService
+            (
+                Path.GetFullPath(rootSourceDirectory),
+                Path.GetFullPath(rootBuildDirectory)
+            );
 
             var typeName = type switch
             {

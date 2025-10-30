@@ -3,4 +3,5 @@ bin
 .vs
 .vscode
 *.DotSettings.user
-
+.DS_Store
+release

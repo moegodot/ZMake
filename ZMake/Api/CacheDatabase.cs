@@ -8,14 +8,14 @@ using Vogen;
 
 namespace ZMake.Api;
 
-public class CacheDatabase<TKey,TValue> : IDisposable
-    where TValue:IEquatable<TValue>
+public class CacheDatabase<TKey, TValue> : IDisposable
+    where TValue : IEquatable<TValue>
 {
     public IZoneTree<TKey, TValue> Database { get; }
 
     private IMaintainer Maintainer { get; }
 
-    public CacheDatabase(string dataPath,Action<ZoneTreeFactory<TKey, TValue>> build)
+    public CacheDatabase(string dataPath, Action<ZoneTreeFactory<TKey, TValue>> build)
     {
         var factory = new ZoneTreeFactory<TKey, TValue>()
             //.SetComparer(new StringInvariantComparerAscending())
@@ -41,7 +41,8 @@ public class CacheDatabase<TKey,TValue> : IDisposable
     {
         return new CacheDatabase<string, UInt128>(dataDir, (factory =>
         {
-            factory.SetComparer(new StringInvariantComparerAscending())
+            factory
+                .SetComparer(new StringInvariantComparerAscending())
                 .SetKeySerializer(new Utf8StringSerializer())
                 .SetValueSerializer(new UInt128Serializer());
         }));

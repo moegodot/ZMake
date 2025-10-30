@@ -1,32 +1,39 @@
 using System.Collections;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 
 namespace ZMake.Api;
 
-public sealed class TargetSet : IEnumerable<ITarget>
+public sealed class TargetSet : IEnumerable<Target>
 {
-    private readonly Dictionary<Name, ITarget> _allTargets = [];
-    private readonly Dictionary<TargetType, ITarget> _typedTargets = [];
+    private readonly FrozenDictionary<Name, Target> _targets;
+    private readonly FrozenDictionary<TargetType, ImmutableArray<Target>> _typedTargets;
 
-    public IReadOnlyDictionary<Name, ITarget> AllTargets => _allTargets;
-    public IReadOnlyDictionary<TargetType, ITarget> TypedTargets => _typedTargets;
-
-    public IEnumerator<ITarget> GetEnumerator()
+    internal TargetSet(
+        FrozenDictionary<Name, Target> targets,
+        FrozenDictionary<TargetType, ImmutableArray<Target>> typedTargets)
     {
-        return _allTargets.Values.GetEnumerator();
+        _targets = targets;
+        _typedTargets = typedTargets;
+    }
+
+    public IReadOnlyDictionary<Name, Target> Targets => _targets;
+    public IReadOnlyDictionary<TargetType, ImmutableArray<Target>> TypedTargets => _typedTargets;
+
+    public Target? this[Name name] => _targets.GetValueRefOrNullRef(name);
+    public ImmutableArray<Target>? this[TargetType targetType] => _typedTargets.GetValueRefOrNullRef(targetType);
+
+    public IEnumerator<Target> GetEnumerator()
+    {
+        var it = _targets.Values.GetEnumerator();
+        while (it.MoveNext())
+        {
+            yield return it.Current;
+        }
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return _allTargets.Values.GetEnumerator();
-    }
-
-    public void Add(TargetType? targetType, ITarget target)
-    {
-        if (_allTargets.ContainsKey(target.Name))
-            throw new InvalidOperationException($"The target `{target.Name}` has been in the target set");
-
-        if (targetType is not null) _typedTargets.Add(targetType, target);
-
-        _allTargets.Add(target.Name, target);
+        return GetEnumerator();
     }
 }

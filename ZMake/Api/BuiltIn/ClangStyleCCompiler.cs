@@ -2,21 +2,21 @@ using System.Diagnostics;
 
 namespace ZMake.Api.BuiltIn;
 
-public class ClangStyleCCompiler: Tool,IBuildTool<CToolArgument>
+public class ClangStyleCCompiler : Tool, IBuildTool<CToolArgument>
 {
     public ClangStyleCCompiler(
         string program,
         ToolName name,
-        ToolType type) : base(program,name,type)
+        ToolType type) : base(program, name, type)
     {
     }
 
     public async Task<bool> Build(
         IEnumerable<string> @in,
         IEnumerable<string> @out,
-        string workDir,
-        Dictionary<string, string> environment,
-        CToolArgument arguments)
+        CToolArgument arguments,
+        string? workDir = null,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         List<string> args = [];
 
@@ -24,14 +24,14 @@ public class ClangStyleCCompiler: Tool,IBuildTool<CToolArgument>
         {
             args.Add(
                 arguments.Optimization switch
-                    {
-                        OptimizationLevel.None => "-O0",
-                        OptimizationLevel.FavourSpeedMinimum => "-O1",
-                        OptimizationLevel.FavourSpeedMedium => "-O2",
-                        OptimizationLevel.FavourSpeedMaximum => "-O3",
-                        OptimizationLevel.FavourSize => "-Os",
-                        _ => throw new UnreachableException(),
-                    });
+                {
+                    OptimizationLevel.None => "-O0",
+                    OptimizationLevel.FavourSpeedMinimum => "-O1",
+                    OptimizationLevel.FavourSpeedMedium => "-O2",
+                    OptimizationLevel.FavourSpeedMaximum => "-O3",
+                    OptimizationLevel.FavourSize => "-Os",
+                    _ => throw new UnreachableException(),
+                });
         }
 
         if (arguments.LanguageVersion is not null)
@@ -49,9 +49,9 @@ public class ClangStyleCCompiler: Tool,IBuildTool<CToolArgument>
 
         args.AddRange(arguments.Definitions.Select(def => $"-D{def}"));
         args.AddRange(@in);
-        args.AddRange(@out.SelectMany(str => (IEnumerable<string>)[$"-o",str]));
+        args.AddRange(@out.SelectMany(str => (IEnumerable<string>)[$"-o", str]));
         args.AddRange(arguments.AdditionalArguments);
 
-        return await Call(workDir, environment, args);
+        return await Call(args, workDir, environment);
     }
 }

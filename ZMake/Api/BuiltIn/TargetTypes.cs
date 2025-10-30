@@ -4,7 +4,7 @@ public static class TargetTypes
 {
     private static TargetType MakeBuiltinTargetName(ArtifactName version, string name)
     {
-        return TargetType.From(Name.Create(version, ["target_type", name]));
+        return TargetType.From(Name.Create(version, $"target_set.{name}"));
     }
 
     public static readonly TargetType Initialize = MakeBuiltinTargetName(Version.V1V0V0, "initialize");

@@ -8,10 +8,14 @@ public sealed class BuildContext
 {
     private readonly ILogger _logger;
 
-    public BuildContext(ILoggerFactory loggerFactory, TaskEngine engine)
+    public BuildContext(
+        ILoggerFactory loggerFactory,
+        TaskEngine engine,
+        RootPathService pathService)
     {
         _logger = loggerFactory.CreateLogger(nameof(BuildContext));
         Engine = engine;
+        PathService = pathService;
     }
 
     public long Id { get; } =
@@ -28,13 +32,17 @@ public sealed class BuildContext
 
     public ConcurrentDictionary<ArtifactName, Artifact> Artifacts { get; } = [];
 
+    public RootPathService PathService { get; }
+
+    public Lazy<ToolChain> ToolChain { get; } = new(() => ToolChainBuilder.CreateFromEnvironment().Build());
+
     public Task BuildArtifacts(params ArtifactName[] artifactNames)
     {
-        List<ITarget> targets = [];
+        List<Target> targets = [];
 
         foreach (var artifactName in artifactNames)
             if (Artifacts.TryGetValue(artifactName, out var artifact))
-                targets.AddRange(artifact.Set.AllTargets.Values);
+                targets.AddRange(artifact.Set.Targets.Values);
             else
                 throw new ArgumentException($"can not found artifact `{artifactName}`");
 
@@ -53,14 +61,14 @@ public sealed class BuildContext
                     .Sort(Artifacts,
                         searchStatus,
                         searched,
-                        Artifacts[artifact.ArtifactName].Set.AllTargets[artifact])));
+                        Artifacts[artifact.ArtifactName].Set.Targets[artifact])));
 
         return Task.WhenAll(tasks);
     }
 
     public Task BuildTypedTargets(params TargetType[] targetTypes)
     {
-        List<ITarget> targets = [];
+        List<Target> targets = [];
 
         var artifacts = Artifacts.ToArray();
 
@@ -69,7 +77,7 @@ public sealed class BuildContext
             var typedTargets = artifact.Value.Set.TypedTargets;
             foreach (var targetType in targetTypes)
                 if (typedTargets.TryGetValue(targetType, out var typedTarget))
-                    targets.Add(typedTarget);
+                    targets.AddRange(typedTarget);
         }
 
         return BuildTargets(targets.Select(t => t.Name).ToArray());

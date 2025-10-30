@@ -1,94 +1,134 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ZMake.Api;
 
-public sealed partial class Name : IEquatable<Name>, IParsable<Name>
+public sealed class Name :
+    IEquatable<Name>,
+    ISpanParsable<Name>
 {
-    [GeneratedRegex("^[a-zA-Z_]+[a-zA-Z0-9_]*$")]
-    private static partial Regex GeneratorNameRegex();
+    public static readonly Regex NameRegex = NameRule.MaybeSinglePartRegex();
 
-    public static readonly Regex NameRegex = GeneratorNameRegex();
+    private static FormatException InvalidNameFormatException(ReadOnlySpan<char> name)
+    {
+        return new FormatException($"invalid name format: {name}");
+    }
 
-    private Name(ArtifactName artifactName, string[] names)
+    private Name(ArtifactName artifactName, string itemName)
     {
         ArtifactName = artifactName;
-        Names = names;
+        ItemName = itemName;
     }
 
-    public ArtifactName ArtifactName { get; init; }
+    public ArtifactName ArtifactName { get; }
 
-    public IReadOnlyList<string> Names { get; init; }
-
-    public bool Equals(Name? other)
-    {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return ArtifactName.Equals(other.ArtifactName) && Names.SequenceEqual(other.Names);
-    }
-
-    public static bool TryParse(
-        [NotNullWhen(true)] string? str,
-        IFormatProvider? _,
-        [NotNullWhen(true)] out Name? result)
-    {
-        result = null;
-
-        if (str == null) return false;
-
-        var part = str.Split('#');
-
-        if (part.Length != 2) return false;
-
-        if (ArtifactName.TryParse(part[0], _, out var artifact))
-            return TryCreate(artifact, part[1].Split(':'), out result);
-
-        return false;
-    }
-
-    public static Name Parse([NotNullWhen(true)] string? str, IFormatProvider? _)
-    {
-        ArgumentNullException.ThrowIfNull(str);
-
-        if (!TryParse(str, _, out var result)) throw new ArgumentException("invalid name format");
-
-        return result;
-    }
+    public string ItemName { get; }
 
     public override bool Equals(object? obj)
     {
         return ReferenceEquals(this, obj) || (obj is Name other && Equals(other));
     }
 
+    public bool Equals(Name? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return ArtifactName.Equals(other.ArtifactName) && ItemName.Equals(other.ItemName);
+    }
+
     public override int GetHashCode()
     {
-        return Names.Aggregate(ArtifactName.GetHashCode(), HashCode.Combine);
+        return HashCode.Combine(ArtifactName, ItemName);
     }
 
     public override string ToString()
     {
-        return $"{ArtifactName}#{string.Join(':', Names)}";
+        return $"{ArtifactName}#{ItemName}";
     }
 
-    public static bool TryCreate(ArtifactName artifactName, IEnumerable<string> names,
-        [NotNullWhen(true)] out Name? result)
+    public static Name Create(ArtifactName artifactName, ReadOnlySpan<char> name)
     {
-        result = null;
-        var nameArray = names.ToArray();
-
-        foreach (var name in nameArray)
-            if (!NameRegex.IsMatch(name))
-                return false;
-
-        result = new Name(artifactName, nameArray);
-        return true;
-    }
-
-    public static Name Create(ArtifactName artifactName, params IEnumerable<string> names)
-    {
-        if (!TryCreate(artifactName, names, out var result)) throw new ArgumentException("invalid names format");
+        if (!TryCreate(artifactName, name, out var result))
+            throw InvalidNameFormatException(name);
 
         return result;
     }
 
+    public static bool TryCreate(
+    ArtifactName artifactName,
+    ReadOnlySpan<char> itemName,
+    [NotNullWhen(true)] out Name? result)
+    {
+        result = null;
+
+        if (!NameRegex.IsMatch(itemName))
+            return false;
+
+        result = new Name(artifactName, itemName.ToString());
+
+        return true;
+    }
+
+    public static Name Parse(
+        [NotNullWhen(true)] string? str,
+        IFormatProvider? provider)
+    {
+        if (TryParse(str, provider, out var result))
+        {
+            return result;
+        }
+
+        throw InvalidNameFormatException(str);
+    }
+
+    public static bool TryParse(
+        [NotNullWhen(true)] string? str,
+        IFormatProvider? provider,
+        [NotNullWhen(true)] out Name? result)
+    {
+        return TryParse((ReadOnlySpan<char>)str, provider, out result);
+    }
+
+    public static Name Parse(ReadOnlySpan<char> s, IFormatProvider? provider)
+    {
+        if (TryParse(s, provider, out var result))
+        {
+            return result;
+        }
+
+        throw InvalidNameFormatException(s);
+    }
+
+    public static bool TryParse(
+        ReadOnlySpan<char> s,
+        IFormatProvider? provider,
+        [MaybeNullWhen(false)] out Name result)
+    {
+        result = null;
+        unsafe
+        {
+            Span<Range> parts = stackalloc Range[2];
+
+            var splitCount = s.Split(parts, '#');
+
+            if (splitCount != 2)
+            {
+                return false;
+            }
+
+            if (!ArtifactName.TryParse(s[parts[0]], provider, out var artifactName))
+            {
+                return false;
+            }
+
+            return TryCreate(artifactName, s[parts[1]], out result);
+        }
+    }
+
+    public Name Append(ReadOnlySpan<char> itemName)
+    {
+        if (!NameRegex.IsMatch(itemName)) { throw InvalidNameFormatException(itemName); }
+        return new Name(ArtifactName, $"{ItemName}.{itemName}");
+    }
 }

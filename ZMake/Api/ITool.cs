@@ -14,7 +14,8 @@ public interface ITool : IGetHashCode128
 
     SemVersion? GetVersion();
 
-    Task<bool> Call(string workDir,
-        Dictionary<string,string> environment,
-        IEnumerable<string> arguments);
+    Task<bool> Call(
+        IEnumerable<string> arguments,
+        string? workDir = null,
+        IReadOnlyDictionary<string, string>? environment = null);
 }

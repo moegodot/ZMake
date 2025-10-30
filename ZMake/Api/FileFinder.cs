@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 
 namespace ZMake.Api;
@@ -7,40 +8,11 @@ namespace ZMake.Api;
 /// This powerful program finder let you find everything you want.
 /// </summary>
 [PublicAPI]
-public class FileFinder
+public sealed class FileFinder
 {
-    public List<string> SearchPaths { get; init; } = [];
+    public ImmutableArray<string> SearchPaths { get; init; } = [];
 
-    public List<string> SearchSuffixes { get; init; } = [];
-
-    /// <summary>
-    /// Create file finder from environment variable "PATH".
-    /// Also use environment variable "PATHEXT" in windows.
-    /// </summary>
-    public static FileFinder FromPathEnvironmentVariables()
-    {
-        var path = Environment.GetEnvironmentVariable("PATH");
-        path ??= "";
-
-        List<string> suffixes = [];
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            var pathext = Environment.GetEnvironmentVariable("PATHEXT");
-            if (pathext != null)
-            {
-                suffixes.AddRange(pathext.Split(';'));
-                suffixes.AddRange(pathext.Split(';').Select(s => s.ToLowerInvariant()));
-            }
-        }
-
-        var splitter = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ';' : ':';
-
-        return new FileFinder
-        {
-            SearchPaths = path.Split(splitter).SkipWhile(string.IsNullOrWhiteSpace).ToList(),
-            SearchSuffixes = suffixes
-        };
-    }
+    public ImmutableArray<string> SearchSuffixes { get; init; } = [];
 
     public IEnumerable<string> Search(string targetName)
     {
@@ -61,5 +33,11 @@ public class FileFinder
                 }
             }
         }
+    }
+
+    public FileFinder(ImmutableArray<string> searchPaths, ImmutableArray<string> searchSuffixes)
+    {
+        SearchPaths = searchPaths;
+        SearchSuffixes = searchSuffixes;
     }
 }

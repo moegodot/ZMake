@@ -4,16 +4,18 @@ using ZMake.Api;
 
 namespace ZMake;
 
-// for user to use
-[RegisterModule(typeof(ZMake.Api.Module))]
 [Register(typeof(BuildContext))]
 [Register(typeof(TaskEngine))]
 internal partial class Container : IContainer<BuildContext>
 {
-    public Container(ILoggerFactory loggerFactory)
+    public Container(ILoggerFactory loggerFactory, RootPathService service)
     {
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(service);
         Factory = loggerFactory;
+        RootPathService = service;
     }
 
     [Instance] protected ILoggerFactory Factory { get; }
+    [Instance] protected RootPathService RootPathService { get; }
 }

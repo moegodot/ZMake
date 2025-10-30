@@ -5,31 +5,45 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <PublishAot>true</PublishAot>
+        <PublishAot Condition="'$(IS_ZMAKE_BOOTSTRAP_MODE)' == 'true'">true</PublishAot>
         <InvariantGlobalization>true</InvariantGlobalization>
-        <DefineConstants>ZMAKE_NO_EXTERNAL_MODULE</DefineConstants>
+        <DefineConstants Condition="'$(IS_ZMAKE_BOOTSTRAP_MODE)' == 'true'">ZMAKE_NO_EXTERNAL_MODULE</DefineConstants>
+        <DefineConstants Condition="'$(IS_ZMAKE_BOOTSTRAP_MODE)' == 'true'">ZMAKE_BOOTSTRAP_MODE</DefineConstants>
+        <DefineConstants Condition="'$(IS_ZMAKE_BOOTSTRAP_MODE)' != 'true'">ZMAKE_USE_DEMYSTIFER</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.10"/>
-        <PackageReference Include="Semver" Version="3.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
+        <PackageReference Include="Semver" Version="3.0.0" />
         <PackageReference Include="Standart.Hash.xxHash" Version="4.0.5" />
-        <PackageReference Include="StrongInject" Version="1.*.*"/>
-        <PackageReference Include="MoeDotKawayi.Pillar.Demystifier" Version="0.4.1"/>
+        <PackageReference Include="StrongInject" Version="1.4.5-CI-20220524-023137" />
+        <PackageReference
+            Condition="'$(IS_ZMAKE_BOOTSTRAP_MODE)' != 'true'"
+            Include="MoeDotKawayi.Pillar.Demystifier"
+            Version="0.4.1" />
 
         <PackageReference Include="ConsoleAppFramework" Version="5.6.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
 
+        <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+
         <PackageReference Include="Vogen" Version="8.0.2" />
 
-        <PackageReference Include="ZLogger" Version="2.5.10"/>
+        <PackageReference Include="ZLogger" Version="2.5.10" />
 
         <PackageReference Include="ZoneTree" Version="1.8.6" />
-        
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource
+            Include="./resources/zmake.tar.gz"
+            LogicalName="zmake.tar.gz" />
+        <EmbeddedResource
+            Include="./resources/dotnet"
+            LogicalName="dotnet" />
     </ItemGroup>
 </Project>

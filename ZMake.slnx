@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="ZMake.Generator\ZMake.Generator.csproj" Type="Classic C#" />
+  <Project Path="ZMake.Test\ZMake.Test.csproj" Type="Classic C#" />
   <Project Path="ZMake/ZMake.csproj" />
 </Solution>

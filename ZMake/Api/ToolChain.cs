@@ -1,28 +1,28 @@
+using System.Collections.Frozen;
+
 namespace ZMake.Api;
 
-public class ToolChain
+public sealed class ToolChain
 {
-    public Dictionary<ToolType, ITool> Tools { get; } = [];
-
-    public FileFinder Finder { get; }
-
+    public FrozenDictionary<ToolType, List<ITool>> Tools { get; }
+    public FileFinder BinaryFinder { get; }
     public Architecture NativeArchitecture { get; }
-
     public Architecture TargetArchitecture { get; }
+    public FrozenDictionary<string, string> Environments { get; }
 
-    public ToolChain()
-    {
-        Finder = FileFinder.FromPathEnvironmentVariables();
-        TargetArchitecture = Architecture.DetectedNativeArchitecture.Value
-                             ?? throw new PlatformNotSupportedException
-                                 ("unknown architecture,call ToolChain construction function with architecture argument");
-        NativeArchitecture = TargetArchitecture;
-    }
+    public ITool? this[ToolType toolType] => Tools[toolType]?.FirstOrDefault();
 
-    public ToolChain(FileFinder finder,Architecture nativeArchitecture,Architecture targetArchitecture)
+    public ToolChain(
+        FrozenDictionary<ToolType, List<ITool>> tools,
+        FileFinder binaryFinder,
+        Architecture nativeArchitecture,
+        Architecture targetArchitecture,
+        FrozenDictionary<string, string> environments)
     {
-        Finder = finder;
+        Tools = tools;
+        BinaryFinder = binaryFinder;
         NativeArchitecture = nativeArchitecture;
         TargetArchitecture = targetArchitecture;
+        Environments = environments;
     }
 }

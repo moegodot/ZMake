@@ -35,7 +35,7 @@ public class Tool : ITool
         return version.Result;
     }
 
-    public Tool(string program,ToolName name,ToolType type)
+    public Tool(string program, ToolName name, ToolType type)
     {
         ProgramPath = program;
         Name = name;
@@ -43,24 +43,28 @@ public class Tool : ITool
     }
 
     public async Task<bool> Call(
-        string workDir,
-        Dictionary<string, string> environment,
-        IEnumerable<string> arguments)
+        IEnumerable<string> arguments,
+        string? workDir = null,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         Process process = new();
 
         process.StartInfo.UseShellExecute = false;
-        process.StartInfo.Environment.Clear();
         process.StartInfo.FileName = ProgramPath ?? string.Empty;
-        process.StartInfo.WorkingDirectory = workDir;
+        process.StartInfo.WorkingDirectory = workDir ?? Environment.CurrentDirectory;
 
         foreach (var argument in arguments)
         {
             process.StartInfo.ArgumentList.Add(argument);
         }
 
-        foreach(var env in environment){
-            process.StartInfo.Environment.Add(env.Key,env.Value);
+        if (environment is not null)
+        {
+            process.StartInfo.Environment.Clear();
+            foreach (var env in environment)
+            {
+                process.StartInfo.Environment.Add(env.Key, env.Value);
+            }
         }
 
         if (!process.Start())
@@ -75,7 +79,7 @@ public class Tool : ITool
 
     public override string ToString()
     {
-        return $"{ProgramPath} [version {GetVersionAsync()}]";
+        return $"{ProgramPath} [version {GetVersion()}]";
     }
 
     public override bool Equals(object? obj)

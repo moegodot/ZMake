@@ -4,25 +4,31 @@ using ZMake.Api.BuiltIn;
 
 namespace ZMake.Api;
 
-[ValueObject<Name>]
+[ValueObject<Name>(conversions: Conversions.None)]
 public sealed partial class Os
 {
     public static readonly Lazy<Os?> DetectedOs =
         new(() =>
         {
+            Os? os = null;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return Oses.Windows;
+                os= Oses.Windows;
             }
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return Oses.Linux;
+                os= Oses.Linux;
             }
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                return Oses.Macos;
+                os= Oses.Macos;
             }
 
-            return null;
+            LogMessage.DetectSystemInformation(
+                LogMessage.Logger,
+                nameof(Os),
+                os?.ToString() ?? "unknown");
+
+            return os;
         }, LazyThreadSafetyMode.None);
 }

@@ -40,6 +40,7 @@ public class CToolArgument : ToolArguments
             HashCode128.Get(LanguageVersion ?? string.Empty),
             HashCode128.Get(Optimization?.ToString() ?? string.Empty),
             HashCode128.Get(Permissive?.ToString() ?? string.Empty),
-            HashCode128.Get(UseUtf8?.ToString() ?? string.Empty));
+            HashCode128.Get(UseUtf8?.ToString() ?? string.Empty),
+            base.GetHashCode128());
     }
 }
