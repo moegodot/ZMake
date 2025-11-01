@@ -1,40 +1,28 @@
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 
 namespace ZMake.Api;
 
-public sealed class BuildContext
+public sealed class BuildContext : IContext
 {
-    private readonly ILogger _logger;
-
-    public BuildContext(
-        ILoggerFactory loggerFactory,
-        TaskEngine engine,
-        RootPathService pathService)
-    {
-        _logger = loggerFactory.CreateLogger(nameof(BuildContext));
-        Engine = engine;
-        PathService = pathService;
-    }
-
     public long Id { get; } =
         ((long)RandomNumberGenerator.GetInt32(int.MinValue, int.MaxValue) << 32) |
         (uint)RandomNumberGenerator.GetInt32(int.MinValue, int.MaxValue);
 
-    public TaskEngine Engine { get; }
-
-    public ConcurrentDictionary<object, object> Items { get; } = [];
+    public required TaskEngine TaskEngine { get; init; }
 
     private readonly CancellationTokenSource _tokenSource = new();
 
     public CancellationToken CancellationToken => _tokenSource.Token;
 
-    public ConcurrentDictionary<ArtifactName, Artifact> Artifacts { get; } = [];
+    public required FrozenDictionary<ArtifactName, Artifact> Artifacts { get; init; }
 
-    public RootPathService PathService { get; }
+    public required RootPathService PathService { get; init; }
 
-    public Lazy<ToolChain> ToolChain { get; } = new(() => ToolChainBuilder.CreateFromEnvironment().Build());
+    public required ToolChain ToolChain { get; init; }
 
     public Task BuildArtifacts(params ArtifactName[] artifactNames)
     {

@@ -13,9 +13,35 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
+    <!--
+    <PropertyGroup>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>
+
+    <Target Name="CleanSourceGeneratedFiles" BeforeTargets="BeforeBuild" DependsOnTargets="$(BeforeBuildDependsOn)">
+        <RemoveDir Directories="Generated" />
+    </Target>
+
     <ItemGroup>
+        <Compile Remove="Generated\**" />
+        <Content Include="Generated\**" />
+    </ItemGroup>
+
+    -->
+
+    <ItemGroup>
+
+        <ProjectReference Include="..\ZMake.Generator\ZMake.Generator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
+
+        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
+        <PackageReference Include="MoeDotKawayi.Pillar.Event" Version="1.0.0" />
+        <PackageReference Include="MoeDotKawayi.PillarOfPillar.Event" Version="1.0.1" />
         <PackageReference Include="Semver" Version="3.0.0" />
         <PackageReference Include="Standart.Hash.xxHash" Version="4.0.5" />
         <PackageReference Include="StrongInject" Version="1.4.5-CI-20220524-023137" />
@@ -38,7 +64,7 @@
         <PackageReference Include="ZoneTree" Version="1.8.6" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(IS_ZMAKE_BOOTSTRAP_MODE)' == 'true'">
         <EmbeddedResource
             Include="./resources/zmake.tar.gz"
             LogicalName="zmake.tar.gz" />

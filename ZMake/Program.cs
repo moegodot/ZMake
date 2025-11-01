@@ -71,20 +71,6 @@ internal static class Program
 
         Log.AppStart();
 
-        _ = Assembly.GetExecutingAssembly().GetManifestResourceNames().Select(name =>
-        {
-            Console.WriteLine(name);
-            return 1;
-        }).ToArray();
-
-        foreach (var found in (IEnumerable<IBuildTool<CToolArgument>>)[
-                    ..C.Find(C.Gcc, FileFinder.FromPathAndPathExt()),
-                    ..C.Find(C.Clang, FileFinder.FromPathAndPathExt()),
-                    ..C.Find(C.Msvc, FileFinder.FromPathAndPathExt())])
-        {
-            Console.WriteLine(found);
-        }
-
         var exitCode = await Application(args, loggerFactory);
 
         Log.AppStop(exitCode);
@@ -94,7 +80,8 @@ internal static class Program
 
     internal class Commands(ILoggerFactory factory) : IDisposable
     {
-        private Owned<BuildContext>? _context;
+        private Owned<BuildPipeline> _zmake;
+        private BuildContext? _context;
 
         protected RootPathService? RootPathService = null;
 
@@ -104,19 +91,23 @@ internal static class Program
         {
             get
             {
-                if (_context != null) return _context.Value;
+                if (_context != null) return _context;
                 if (RootPathService == null)
                 {
                     throw new InvalidOperationException("RootPathService not set");
                 }
 
-                var container = new Container(LoggerFactory, RootPathService);
+                var container = new Container(
+                    LoggerFactory,
+                    RootPathService,
+                    new MaintenanceArtifactProvider());
 
-                _context = container.Resolve();
+                _zmake = container.Resolve();
+                _context = _zmake.Value.Build();
 
-                Log.BuildContextStart(_context.Value.Id);
+                Log.BuildContextStart(_context.Id);
 
-                return _context.Value;
+                return _context;
             }
         }
 
@@ -153,9 +144,10 @@ internal static class Program
         {
             if (_context != null)
             {
-                Log.BuildContextStop(_context.Value.Id);
-                _context?.Dispose();
+                Log.BuildContextStop(_context.Id);
             }
+
+            _zmake?.Dispose();
 
             LoggerFactory.Dispose();
             Log.Dispose();
@@ -178,22 +170,7 @@ internal static class Program
 
             SearchRootPath();
 
-            var provider = new MaintenanceArtifactProvider();
-            provider.Bind(Context);
-            foreach (var artifact in provider.Get())
-            {
-                if (!Context.Artifacts.TryAdd(artifact.Name, artifact))
-                {
-                    throw new InvalidOperationException(
-                        $"failed to add artifact `{artifact.Name}` to Context.Artifacts");
-                }
-            }
-
-            await Context.BuildArtifacts(
-                provider
-                .Get()
-                .Select(artifact => artifact.Name)
-                .ToArray());
+            await Context.BuildTypedTargets(TargetTypes.Deploy);
 
             Log.CommandStop(nameof(Make));
         }

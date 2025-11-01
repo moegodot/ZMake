@@ -16,13 +16,15 @@ public sealed class RootPathService(string rootSourcePath, string rootBuildPath)
     public string RootDotnetPath { get; } = Path.Combine(rootBuildPath, DotnetDirectoryName);
 
 
-    public PathService Create([CallerFilePath] string currentSourcePath = null!)
+    public PathService Create(string currentSourcePath)
     {
-        Trace.Assert(currentSourcePath is not null, "currentSourcePath is null");
         currentSourcePath = Path.GetFullPath(currentSourcePath);
+
         var relative = Path.GetRelativePath(RootSourcePath, currentSourcePath);
+
         var binaryPath =
             Path.Combine(RootBinaryObjectsPath, relative);
+
         var cachePath = Path.Combine(RootCachePath, relative);
 
         return new PathService

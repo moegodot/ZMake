@@ -2,6 +2,7 @@
 
 public enum TaskType
 {
-    IoBound,
-    CpuBound
+    Default = 0,
+    IoBound = 1,
+    LongRunning,
 }

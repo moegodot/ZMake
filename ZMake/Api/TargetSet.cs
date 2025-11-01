@@ -6,26 +6,24 @@ namespace ZMake.Api;
 
 public sealed class TargetSet : IEnumerable<Target>
 {
-    private readonly FrozenDictionary<Name, Target> _targets;
-    private readonly FrozenDictionary<TargetType, ImmutableArray<Target>> _typedTargets;
-
     internal TargetSet(
         FrozenDictionary<Name, Target> targets,
         FrozenDictionary<TargetType, ImmutableArray<Target>> typedTargets)
     {
-        _targets = targets;
-        _typedTargets = typedTargets;
+        Targets = targets;
+        TypedTargets = typedTargets;
     }
 
-    public IReadOnlyDictionary<Name, Target> Targets => _targets;
-    public IReadOnlyDictionary<TargetType, ImmutableArray<Target>> TypedTargets => _typedTargets;
+    public FrozenDictionary<Name, Target> Targets { get; }
+    public FrozenDictionary<TargetType, ImmutableArray<Target>> TypedTargets { get; }
 
-    public Target? this[Name name] => _targets.GetValueRefOrNullRef(name);
-    public ImmutableArray<Target>? this[TargetType targetType] => _typedTargets.GetValueRefOrNullRef(targetType);
+    public Target? this[Name name] => Targets.GetValueRefOrNullRef(name);
+
+    public ImmutableArray<Target>? this[TargetType targetType] => TypedTargets.GetValueRefOrNullRef(targetType);
 
     public IEnumerator<Target> GetEnumerator()
     {
-        var it = _targets.Values.GetEnumerator();
+        var it = Targets.Values.GetEnumerator();
         while (it.MoveNext())
         {
             yield return it.Current;

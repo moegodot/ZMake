@@ -1,23 +1,31 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace ZMake.Api;
 
 public sealed class TaskEngine
 {
-    private List<Task> Tasks = new();
+    public TaskFactory Default { get; } = new(TaskScheduler.Default);
 
-    public void AddTaskToRun(TaskType? type,Task task)
-    {
-        task.Start();
-        Tasks.Add(task);
-    }
+    public TaskFactory IoBound { get; } = new(
+        TaskCreationOptions.RunContinuationsAsynchronously,
+        TaskContinuationOptions.None);
 
-    public void Join()
+    public TaskFactory LongRunning { get; } =
+        new(TaskCreationOptions.LongRunning,
+            TaskContinuationOptions.LongRunning);
+
+    public TaskFactory this[TaskType type]
     {
-        foreach (var task in Tasks)
+        get
         {
-            task.Wait();
+            return type switch
+            {
+                TaskType.Default => Default,
+                TaskType.IoBound => IoBound,
+                TaskType.LongRunning => LongRunning,
+                _ => throw new UnreachableException(),
+            };
         }
-        Tasks.Clear();
     }
 }

@@ -3,47 +3,39 @@ using ZMake.Api.BuiltIn;
 
 namespace ZMake;
 
-public sealed partial class MaintenanceProject(BuildContext buildContext) : ArtifactProject(buildContext)
+[ArtifactProject]
+public sealed partial class MaintenanceProject
 {
-    public override string GroupId { get; } = Api.Version.GroupId;
-    public override string ArtifactId { get; } = Api.Version.ArtifactId;
-    public override string Version { get; } = Api.Version.Latest.Version.ToString();
-    public override PathService Paths { get; } = buildContext.PathService.Create();
-
-    public IEnumerable<TargetBuilder> Targets()
+    public static ArtifactName GetArtifactName()
     {
-        var toolChainBuilder = ToolChainBuilder.CreateNativeArchitectureEmpty(
-            FileFinderBuilder.FromPathExt(),
-            new Dictionary<string, string>{
-                { "PATH", Context!.PathService.RootDotnetPath },
-                { "DOTNET_ROOT", Context!.PathService.RootDotnetPath },
-                { "DOTNET_NOLOGO", "true" }
-            }
-        );
+        return ArtifactName.CreateWithNewArtifactId(Api.Version.Latest, "zmake.maintenance");
+    }
 
-        toolChainBuilder.BinaryFinder.SearchPaths.Add(Context!.PathService.RootDotnetPath);
+    public const string CsProjectFileName = "ZMakefile.csproj";
 
-        // In real environment, call ToolChainBuilder.CreateFromEnvironment().Build();
-        var toolChain = toolChainBuilder.Build();
+    public IEnumerable<ITargetSource> GetTargets(InitializeContext context)
+    {
+        var csprojPath = $"{context.PathService.RootDotnetPath}/{CsProjectFileName}";
 
         DotnetTargetEmitter emitter = new(
-            Name.Create(ArtifactName, "dotnet"),
-            Context!.PathService.RootDotnetPath,
-            toolChain);
+            Name.Append("dotnet"),
+            context.ToolChain);
+
+        yield return new TargetBuilder();
 
         yield return emitter
-            .AddDotnetTarget(new DotnetArguments("build")
+            .AddDotnetTarget([csprojPath],[],new("build")
             {
-                Configuration = "Release",
-            }, "build")
+                Configuration = "Release"
+            })
             .Public(TargetTypes.Build)
             .OutName(out var build);
 
         yield return emitter
-            .AddDotnetTarget(new DotnetArguments("run")
+            .AddDotnetTarget([csprojPath],[],new("run")
             {
                 Configuration = "Release",
-            }, "run")
+            })
             .Public(TargetTypes.Deploy)
             .WithPublicDependencies(build);
     }

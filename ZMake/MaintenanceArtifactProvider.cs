@@ -6,21 +6,24 @@ namespace ZMake;
 
 public class MaintenanceArtifactProvider : ArtifactsProviderBase
 {
-
-    public static readonly ArtifactName ArtifactName =
-        ArtifactName.CreateWithNewArtifactId(Api.Version.Latest, "zmake.maintain");
-
-    public TargetSet Targets { get; } = null!;
-
-    public ITool? Dotnet { get; set; }
-
-    protected override void AfterBind()
+    protected override IEnumerable<IArtifact> GetProjects(InitializeContext context)
     {
-
+        return [new MaintenanceProject()];
     }
 
-    public override IEnumerable<Artifact> Get()
+    public override void Initialize(InitializeContextBuilder builder)
     {
-        yield return new Artifact(ArtifactName, Targets);
+        var toolChainBuilder = ToolChainBuilder.CreateNativeArchitectureEmpty(
+            FileFinderBuilder.FromPathExt(),
+            new Dictionary<string, string>{
+                { "PATH", builder.PathService.RootDotnetPath },
+                { "DOTNET_ROOT", builder.PathService.RootDotnetPath },
+                { "DOTNET_NOLOGO", "true" }
+            }
+        );
+
+        toolChainBuilder.BinaryFinder.SearchPaths.Add(builder.PathService.RootDotnetPath);
+
+        builder.ToolChain = toolChainBuilder;
     }
 }

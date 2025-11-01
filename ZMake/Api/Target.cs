@@ -2,14 +2,14 @@ using System.Collections.Immutable;
 
 namespace ZMake.Api;
 
-public class Target
+public sealed class Target
 {
     public Target(
         Name name,
         AccessibilityLevel accessibilityLevel,
         ImmutableArray<Target> privateDependencies,
         ImmutableArray<Name> publicDependencies,
-        ImmutableArray<Task<Task>> tasks)
+        ImmutableArray<Func<Task>> tasks)
     {
         Name = name;
         PrivateDependencies = privateDependencies;
@@ -22,7 +22,20 @@ public class Target
     public AccessibilityLevel AccessibilityLevel { get; }
     public ImmutableArray<Target> PrivateDependencies { get; }
     public ImmutableArray<Name> PublicDependencies { get; }
-    public ImmutableArray<Task<Task>> Tasks { get; }
+    public ImmutableArray<Func<Task>> Tasks { get; }
+
+    public Task Run()
+    {
+        List<Task> tasks = new(Tasks.Length);
+
+        foreach (var task in Tasks)
+        {
+            tasks.Add(task());
+        }
+
+        return Task.WhenAll(tasks);
+    }
+
     public override string ToString()
     {
         return $"(Target {Name})";

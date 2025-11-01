@@ -52,15 +52,10 @@ internal static class TopologicalSorting
 
         searchStatus[target.Name] = false;
         var task =
-        new Task<Task>(async () => await Task.WhenAll(parentTasks))
-        .ContinueWith(
-            async preTasks =>
+        new Task<Task>(async () =>
             {
-                if (!preTasks.IsCompletedSuccessfully)
-                {
-                    await preTasks;
-                }
-                return Task.WhenAll(target.Tasks);
+                await Task.WhenAll(parentTasks);
+                await Task.WhenAll(target.Tasks.Select((taskConstruct) => taskConstruct()).ToArray());
             });
         searched[target.Name] = task;
 

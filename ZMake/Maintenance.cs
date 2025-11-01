@@ -6,7 +6,6 @@ namespace ZMake;
 
 public static class Maintenance
 {
-
     public const string ZMakeLockFileName = "zmake.build.lock";
 
     public const string GitRepository = "https://github.com/moegodot/ZMake";

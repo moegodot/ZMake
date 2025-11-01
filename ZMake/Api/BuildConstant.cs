@@ -1,18 +1,20 @@
+using System.Collections.Immutable;
+
 namespace ZMake.Api;
 
 public sealed class BuildConstant<T>:IGetHashCode128 where T:ToolArguments
 {
-    public List<string> Sources { get; }
-    public List<string> Outputs { get; }
-    public Dictionary<string,string> Environments { get; }
+    public ImmutableArray<string> Sources { get; }
+    public ImmutableArray<string> Outputs { get; }
+    public ImmutableDictionary<string,string> Environments { get; }
     public T Options { get; }
     public IBuildTool<T> Tool { get; }
     public string WorkDir { get; }
 
     public BuildConstant(
-        List<string> sources,
-        List<string> outputs,
-        Dictionary<string,string> environments,
+        ImmutableArray<string> sources,
+        ImmutableArray<string> outputs,
+        ImmutableDictionary<string,string> environments,
         T options,
         IBuildTool<T> tool,
         string workDir)
