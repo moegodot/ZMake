@@ -1,5 +1,4 @@
 using ZMake.Api;
-using ZMake.Api.BuiltIn;
 
 namespace ZMake;
 
@@ -17,18 +16,32 @@ public sealed partial class MaintenanceProject
     {
         var csprojPath = $"{context.PathService.RootDotnetPath}/{CsProjectFileName}";
 
+        var constant =
+            FileMatcher.Matches(CurrentSourceDirectory, "*.build.cs")
+                .ToBuildConstantBuilderAsSource(context)
+                .Build();
+
+        var targetName = Name.Append("dotnet");
         DotnetTargetEmitter emitter = new(
-            Name.Append("dotnet"),
+            targetName,
             context.ToolChain);
 
-        yield return new TargetBuilder();
+        yield return new TargetBuilder()
+            .WithName(targetName.Append("collect_sources"))
+            .Public(TargetType.Builtin.Initialize)
+            .WithTasks(context.TaskEngine,(builder) =>
+            {
+
+            })
+            .OutName(out var collectName);
 
         yield return emitter
             .AddDotnetTarget([csprojPath],[],new("build")
             {
                 Configuration = "Release"
             })
-            .Public(TargetTypes.Build)
+            .DependOn(collectName)
+            .Public(TargetType.Builtin.Build)
             .OutName(out var build);
 
         yield return emitter
@@ -36,7 +49,7 @@ public sealed partial class MaintenanceProject
             {
                 Configuration = "Release",
             })
-            .Public(TargetTypes.Deploy)
-            .WithPublicDependencies(build);
+            .Public(TargetType.Builtin.Deploy)
+            .DependOn(build);
     }
 }

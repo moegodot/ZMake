@@ -3,8 +3,8 @@ using JetBrains.Annotations;
 namespace ZMake.Api;
 
 [PublicAPI]
-public interface IBuildChecker<T> where T : ToolArguments
+public interface IBuildChecker
 {
-    Task Update(BuildConstant<T> build);
-    Task<bool> CheckChanged(BuildConstant<T> build);
+    Task Update(BuildConstant build);
+    Task<bool> CheckChanged(BuildConstant build);
 }

@@ -1,6 +1,5 @@
 ﻿using System.Runtime.InteropServices;
 using Vogen;
-using ZMake.Api.BuiltIn;
 
 namespace ZMake.Api;
 
@@ -13,15 +12,15 @@ public sealed partial class Os
             Os? os = null;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                os= Oses.Windows;
+                os= Builtin.Windows;
             }
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                os= Oses.Linux;
+                os= Builtin.Linux;
             }
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                os= Oses.Macos;
+                os= Builtin.Macos;
             }
 
             LogMessage.DetectSystemInformation(
@@ -31,4 +30,16 @@ public sealed partial class Os
 
             return os;
         }, LazyThreadSafetyMode.None);
+
+    public static class Builtin
+    {
+        private static Os Make(ArtifactName version, string name)
+        {
+            return From(Name.Create(version, $"os.{name}"));
+        }
+
+        public static readonly Os Windows = Make(Version.V1V0V0, "windows");
+        public static readonly Os Linux = Make(Version.V1V0V0, "linux");
+        public static readonly Os Macos = Make(Version.V1V0V0, "macos");
+    }
 }

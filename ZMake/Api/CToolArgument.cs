@@ -1,4 +1,4 @@
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
 /// <summary>
 /// Used in both c and cpp

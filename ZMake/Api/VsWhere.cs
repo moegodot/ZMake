@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
 public static class VsWhere
 {

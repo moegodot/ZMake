@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO.Compression;
 using ZMake.Api;
-using ZMake.Api.BuiltIn;
 
 namespace ZMake;
 
@@ -31,7 +30,7 @@ public static class EmbeddedResources
             throw new NotSupportedException("Not supported operation system");
         }
 
-        if (os.Equals(Oses.Windows))
+        if (os.Equals(Os.Builtin.Windows))
         {
             isWindows = true;
         }

@@ -1,6 +1,4 @@
-using System.Collections.ObjectModel;
-
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
 public class DotnetTargetEmitter : ITargetEmitter
 {

@@ -1,17 +1,18 @@
-using System.Security.Cryptography;
 using System.Text;
 using Standart.Hash.xxHash;
 
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
-public sealed class OutputHashChecker<T> : IBuildChecker<T> where T : ToolArguments
+public sealed class OutputHashChecker : IBuildChecker
 {
     private readonly CacheDatabase<string, UInt128> _cacheDatabase;
+
     public OutputHashChecker(CacheDatabase<string,UInt128> database)
     {
         _cacheDatabase = database;
     }
-    public async Task Update(BuildConstant<T> build)
+
+    public async Task Update(BuildConstant build)
     {
         foreach (var output in build.Outputs)
         {
@@ -26,7 +27,7 @@ public sealed class OutputHashChecker<T> : IBuildChecker<T> where T : ToolArgume
         }
     }
 
-    public async Task<bool> CheckChanged(BuildConstant<T> build)
+    public async Task<bool> CheckChanged(BuildConstant build)
     {
         foreach (var output in build.Outputs)
         {

@@ -9,8 +9,10 @@ public interface IBuildTool<T> : ITool where T : ToolArguments
         string? workDir = null,
         IReadOnlyDictionary<string, string>? environment = null);
 
-    Task<bool> Build(BuildConstant<T> build)
+    Task<bool> Build(BuildConstant build)
     {
-        return Build(build.Sources, build.Outputs, build.Options, build.WorkDir, build.Environments);
+        return Build(build.Sources, build.Outputs, build.Options.OfType<T>().FirstOrDefault()
+            ?? throw new InvalidOperationException($"Failed to find options of {typeof(T)} in BuildConstants.Options"),
+            build.WorkDir, build.Environments);
     }
 }

@@ -1,4 +1,4 @@
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
 public sealed class BuildPipeline<T> : IBuildPipeline<T> where T : ToolArguments
 {

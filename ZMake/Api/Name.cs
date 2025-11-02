@@ -6,7 +6,8 @@ namespace ZMake.Api;
 
 public sealed class Name :
     IEquatable<Name>,
-    ISpanParsable<Name>
+    ISpanParsable<Name>,
+    INameValidator
 {
     public static readonly Regex NameRegex = NameRule.MaybeSinglePartRegex();
 
@@ -45,6 +46,11 @@ public sealed class Name :
     public override string ToString()
     {
         return $"{ArtifactName}#{ItemName}";
+    }
+
+    public bool Validate(Name other)
+    {
+        return Equals(other);
     }
 
     public static Name Create(ArtifactName artifactName, ReadOnlySpan<char> name)
@@ -130,5 +136,10 @@ public sealed class Name :
     {
         if (!NameRegex.IsMatch(itemName)) { throw InvalidNameFormatException(itemName); }
         return new Name(ArtifactName, $"{ItemName}.{itemName}");
+    }
+
+    public bool IsChildOf(Name parent)
+    {
+        return parent.ArtifactName.Equals(ArtifactName) && parent.ItemName.StartsWith(ItemName);
     }
 }

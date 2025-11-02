@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Semver;
 
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
 public class Tool : ITool
 {

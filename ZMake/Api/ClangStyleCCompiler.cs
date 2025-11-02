@@ -1,10 +1,10 @@
 using System.Diagnostics;
 
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
-public class MsvcStyleCCompiler : Tool, IBuildTool<CToolArgument>
+public class ClangStyleCCompiler : Tool, IBuildTool<CToolArgument>
 {
-    public MsvcStyleCCompiler(
+    public ClangStyleCCompiler(
         string program,
         ToolName name,
         ToolType type) : base(program, name, type)
@@ -18,41 +18,38 @@ public class MsvcStyleCCompiler : Tool, IBuildTool<CToolArgument>
         string? workDir = null,
         IReadOnlyDictionary<string, string>? environment = null)
     {
-        List<string> args = ["/nologo"];
+        List<string> args = [];
 
         if (arguments.Optimization is not null)
         {
             args.Add(
                 arguments.Optimization switch
                 {
-                    OptimizationLevel.None => "/Od",
-                    OptimizationLevel.FavourSpeedMinimum => "/Ot",
-                    OptimizationLevel.FavourSpeedMedium => "/Ox",
-                    OptimizationLevel.FavourSpeedMaximum => "/O2",
-                    OptimizationLevel.FavourSize => "/O1",
+                    OptimizationLevel.None => "-O0",
+                    OptimizationLevel.FavourSpeedMinimum => "-O1",
+                    OptimizationLevel.FavourSpeedMedium => "-O2",
+                    OptimizationLevel.FavourSpeedMaximum => "-O3",
+                    OptimizationLevel.FavourSize => "-Os",
                     _ => throw new UnreachableException(),
                 });
         }
 
         if (arguments.LanguageVersion is not null)
         {
-            args.Add($"/std={arguments.LanguageVersion}");
-        }
-
-        if (arguments.Permissive.HasValue && (!arguments.Permissive.Value))
-        {
-            args.Add("/permissive-");
-            args.Add("/Zc");
+            args.Add($"-std={arguments.LanguageVersion}");
         }
 
         if (arguments.UseUtf8.HasValue && arguments.UseUtf8.Value)
         {
-            args.Add("/utf-8");
+            args.AddRange([
+                    "-finput-charset=UTF-8",
+                    "-fexec-charset=UTF-8"
+                ]);
         }
 
-        args.AddRange(arguments.Definitions.Select(def => $"/D{def}"));
+        args.AddRange(arguments.Definitions.Select(def => $"-D{def}"));
         args.AddRange(@in);
-        args.AddRange(@out.SelectMany(str => (IEnumerable<string>)[$"/o", str]));
+        args.AddRange(@out.SelectMany(str => (IEnumerable<string>)[$"-o", str]));
         args.AddRange(arguments.AdditionalArguments);
 
         return await Call(args, workDir, environment);

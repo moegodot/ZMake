@@ -1,8 +1,8 @@
 namespace ZMake.Api;
 
-public interface IBuildPipeline<T> where T : ToolArguments
+public interface IBuildPipeline
 {
-    IEnumerable<IBuildChecker<T>> Checkers { get; }
+    IEnumerable<IBuildChecker> Checkers { get; }
 
-    Task Build(BuildConstant<T> target);
+    Task Build(BuildConstant target);
 }

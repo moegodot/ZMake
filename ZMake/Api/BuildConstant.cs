@@ -1,35 +1,44 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
+using M31.FluentApi.Attributes;
 
 namespace ZMake.Api;
 
-public sealed class BuildConstant<T>:IGetHashCode128 where T:ToolArguments
+[FluentApi]
+public sealed class BuildConstant:IGetHashCode128
 {
-    public ImmutableArray<string> Sources { get; }
-    public ImmutableArray<string> Outputs { get; }
-    public ImmutableDictionary<string,string> Environments { get; }
-    public T Options { get; }
-    public IBuildTool<T> Tool { get; }
-    public string WorkDir { get; }
+    [FluentMember(0)]
+    public ImmutableArray<string> Sources { get; init; }
+    [FluentMember(1)]
+    public ImmutableArray<string> Outputs { get;init; }
+    [FluentMember(2)]
+    public FrozenDictionary<string,string> Environments { get;init; }
+    [FluentMember(3)]
+    public ImmutableArray<ToolArguments> Options { get;init; }
+    [FluentMember(5)]
+    public ImmutableArray<ITool> Tools { get;init; }
+    [FluentMember(6)]
+    public string WorkDir { get;init; }
 
     public BuildConstant(
         ImmutableArray<string> sources,
         ImmutableArray<string> outputs,
-        ImmutableDictionary<string,string> environments,
-        T options,
-        IBuildTool<T> tool,
+        FrozenDictionary<string,string> environments,
+        ImmutableArray<ToolArguments> options,
+        ImmutableArray<ITool> tools,
         string workDir)
     {
         Sources = sources;
         Outputs = outputs;
         Environments = environments;
         Options = options;
-        Tool = tool;
+        Tools = tools;
         WorkDir = workDir;
     }
 
     public override string ToString()
     {
-        return $"Build constant[sources:{string.Join(';',Sources)}][outputs:{string.Join(';',Outputs)}][workdir:{WorkDir}][options:{Options}][tool:{Tool}]";
+        return $"Build constant[sources:{string.Join(';',Sources)}][outputs:{string.Join(';',Outputs)}][workdir:{WorkDir}][options:{Options}][tool:{Tools}]";
     }
 
     public UInt128 GetHashCode128()
@@ -38,23 +47,23 @@ public sealed class BuildConstant<T>:IGetHashCode128 where T:ToolArguments
             Sources.GetEnumerableHashCode128(),
             Outputs.GetEnumerableHashCode128(),
             Environments.GetDictionaryHashCode128(),
-            Options.GetHashCode128(),
-            Tool.GetHashCode128(),
+            Options.GetEnumerableHashCode128(),
+            Tools.GetEnumerableHashCode128(),
             HashCode128.Get(WorkDir));
     }
 
     public override bool Equals(object? obj)
     {
-        if (obj is not BuildConstant<T> constant)
+        if (obj is not BuildConstant constant)
         {
             return false;
         }
 
         return Sources.SequenceEqual(constant.Sources) &&
                Outputs.SequenceEqual(constant.Outputs) &&
-               Options.Equals(constant.Options) &&
+               Options.SequenceEqual(constant.Options) &&
                Environments.DictionaryEquals(constant.Environments) &&
-               Tool.Equals(constant.Tool) &&
+               Tools.SequenceEqual(constant.Tools)  &&
                WorkDir.Equals(constant.WorkDir);
     }
 
@@ -65,7 +74,7 @@ public sealed class BuildConstant<T>:IGetHashCode128 where T:ToolArguments
             Outputs.GetEnumerableHashCode(),
             Environments.GetDictionaryHashCode(),
             Options,
-            Tool,
+            Tools,
             WorkDir);
     }
 }

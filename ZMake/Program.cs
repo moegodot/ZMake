@@ -8,7 +8,6 @@ using Semver;
 using StrongInject;
 using ZLogger;
 using ZMake.Api;
-using ZMake.Api.BuiltIn;
 using static ZMake.LogMessage;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -170,7 +169,7 @@ internal static class Program
 
             SearchRootPath();
 
-            await Context.BuildTypedTargets(TargetTypes.Deploy);
+            await Context.BuildTypedTargets(TargetType.Builtin.Deploy);
 
             Log.CommandStop(nameof(Make));
         }
@@ -207,13 +206,13 @@ internal static class Program
 
             var typeName = type switch
             {
-                "initialize" => TargetTypes.Initialize,
-                "build" => TargetTypes.Build,
-                "clean" => TargetTypes.Clean,
-                "test" => TargetTypes.Test,
-                "package" => TargetTypes.Package,
-                "install" => TargetTypes.Install,
-                "deploy" => TargetTypes.Deploy,
+                "initialize" => TargetType.Builtin.Initialize,
+                "build" => TargetType.Builtin.Build,
+                "clean" => TargetType.Builtin.Clean,
+                "test" => TargetType.Builtin.Test,
+                "package" => TargetType.Builtin.Package,
+                "install" => TargetType.Builtin.Install,
+                "deploy" => TargetType.Builtin.Deploy,
                 _ => TargetType.Parse(type, null)
             };
 

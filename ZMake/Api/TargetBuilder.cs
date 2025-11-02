@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
-using System.Diagnostics.Contracts;
 
-namespace ZMake.Api.BuiltIn;
+namespace ZMake.Api;
 
 public sealed class TargetBuilder : ITargetSource
 {
@@ -29,6 +28,18 @@ public sealed class TargetBuilder : ITargetSource
         }
     }
 
+    public TargetBuilder WithTasks(TaskEngine taskEngine,params Action<TaskBuilder>[] builders)
+    {
+        foreach (var builder in builders)
+        {
+            var t = new TaskBuilder(taskEngine);
+            builder(t);
+            Tasks.Add(t.Build());
+        }
+
+        return this;
+    }
+
     public TargetBuilder WithName(Name targetName)
     {
         CheckBuilt();
@@ -36,28 +47,28 @@ public sealed class TargetBuilder : ITargetSource
         return this;
     }
 
-    public TargetBuilder WithPrivateDependencies(IEnumerable<Target> privateDependencies)
+    public TargetBuilder DependOn(IEnumerable<Target> privateDependencies)
     {
         CheckBuilt();
         PrivateDependencies.AddRange(privateDependencies);
         return this;
     }
 
-    public TargetBuilder WithPrivateDependencies(Target privateDependencies)
+    public TargetBuilder DependOn(Target privateDependencies)
     {
         CheckBuilt();
         PrivateDependencies.Add(privateDependencies);
         return this;
     }
 
-    public TargetBuilder WithPublicDependencies(IEnumerable<Name> publicDependencies)
+    public TargetBuilder DependOn(IEnumerable<Name> publicDependencies)
     {
         CheckBuilt();
         PublicDependencies.AddRange(publicDependencies);
         return this;
     }
 
-    public TargetBuilder WithPublicDependencies(Name publicDependencies)
+    public TargetBuilder DependOn(Name publicDependencies)
     {
         CheckBuilt();
         PublicDependencies.Add(publicDependencies);

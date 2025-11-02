@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Vogen;
-using ZMake.Api.BuiltIn;
 
 namespace ZMake.Api;
 
@@ -13,9 +12,9 @@ public sealed partial class Architecture
         {
             var arch = RuntimeInformation.ProcessArchitecture switch
             {
-                System.Runtime.InteropServices.Architecture.X86 => Architectures.X86,
-                System.Runtime.InteropServices.Architecture.X64 => Architectures.X64,
-                System.Runtime.InteropServices.Architecture.Arm64 => Architectures.Arm64,
+                System.Runtime.InteropServices.Architecture.X86 => Builtin.X86,
+                System.Runtime.InteropServices.Architecture.X64 => Builtin.X64,
+                System.Runtime.InteropServices.Architecture.Arm64 => Builtin.Arm64,
                 _ => null
             };
 
@@ -26,4 +25,16 @@ public sealed partial class Architecture
 
             return arch;
         }, LazyThreadSafetyMode.None);
+
+    public static class Builtin
+    {
+        private static Architecture Make(ArtifactName version, string name)
+        {
+            return Architecture.From(Name.Create(version, $"architecture.{name}"));
+        }
+
+        public static readonly Architecture X86 = Make(Version.V1V0V0, "x86");
+        public static readonly Architecture X64 = Make(Version.V1V0V0, "x64");
+        public static readonly Architecture Arm64 = Make(Version.V1V0V0, "arm64");
+    }
 }
